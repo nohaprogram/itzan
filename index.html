@@ -322,6 +322,19 @@ img{max-width:100%}
   </div>
   <div id="d-book" hidden>
 <div data-staff hidden>
+    <h3 class="section-title">ساعات الحجز المتاحة <span style="font-size:13px;color:var(--muted)">(للطالبات وأولياء الأمور)</span></h3>
+    <form class="form card" id="bcfgForm">
+      <div id="bcDays" style="display:flex;flex-wrap:wrap;gap:10px"></div>
+      <div style="display:flex;flex-wrap:wrap;gap:10px">
+        <label>من الساعة <input type="time" id="bcFrom" value="08:00"></label>
+        <label>إلى الساعة <input type="time" id="bcTo" value="12:00"></label>
+        <label>مدة الموعد <select id="bcStep"><option value="15">١٥ دقيقة</option><option value="20">٢٠ دقيقة</option><option value="30">٣٠ دقيقة</option><option value="45">٤٥ دقيقة</option><option value="60">ساعة</option></select></label>
+        <label>عدد الأيام المعروضة <input type="number" id="bcAhead" min="1" max="14" value="5" style="width:80px"></label>
+      </div>
+      <div><button class="btn" type="submit">حفظ ساعات الحجز</button></div>
+    </form>
+  </div>
+  <div data-staff hidden>
     <h3 class="section-title">الحجوزات المسجّلة <span style="font-size:13px;color:var(--muted)">(عرض المرشدة)</span></h3>
     <div class="scroll"><table id="bookTable"></table></div>
   </div>
@@ -409,6 +422,11 @@ img{max-width:100%}
   <div class="scroll"><table id="listTable"></table></div>
   <h3 class="section-title">إضافة إلى القائمة</h3>
   <form class="form card" id="addForm"></form>
+  <h3 class="section-title">استيراد ملف القوائم</h3>
+  <div class="card form">
+    <p style="font-size:14px;color:var(--muted)">لإدراج أسماء الطالبات والموظفات دفعة واحدة: اختاري ملف القوائم (lists-import.json).</p>
+    <input type="file" id="impFile" accept=".json,application/json">
+  </div>
   <h3 class="section-title">استيراد قائمة طالبات</h3>
   <form class="form card" id="impForm">
     <p style="font-size:14px;color:var(--muted)">الصقي الأسماء، سطر لكل طالبة: الاسم ثم الصف (١ أو ٢ أو ٣) ثم الفصل اختياريًا، يفصل بينها فاصلة أو علامة جدولة. مثال: سارة محمد العتيبي، ١، أ</p>
@@ -1093,13 +1111,26 @@ img{max-width:100%}
   surveysDraw();
 
   /* ---------- booking ---------- */
-  var SLOTS = ["8:00 ص","8:30 ص","9:00 ص","9:30 ص","10:00 ص","10:30 ص","11:00 ص","11:30 ص","12:00 م"];
+  var BCFG = {days:[0,1,2,3,4], from:"08:00", to:"12:00", step:30, ahead:5};
+  var SLOTS = [], dayList = [];
   var fmtDay = new Intl.DateTimeFormat("ar-SA-u-ca-gregory", {weekday:"long", day:"numeric", month:"long"});
-  var dayList = [], d0 = new Date();
-  while(dayList.length < 5){ d0 = new Date(d0.getTime() + 86400000); var wd = d0.getDay(); if(wd !== 5 && wd !== 6) dayList.push(new Date(d0.getTime())); }
+  function hm(m){ var h = Math.floor(m/60), mi = m%60, ap = h < 12 ? "ص" : "م"; var h12 = h%12 === 0 ? 12 : h%12; return h12+":"+(mi<10?"0":"")+mi+" "+ap; }
+  function tmin(t){ var a = String(t||"0:0").split(":"); return (+a[0])*60 + (+a[1]||0); }
+  function applyBookCfg(){
+    var c = BCFG, st = Math.max(10, +c.step || 30), a = tmin(c.from), b = tmin(c.to);
+    SLOTS = []; for(var m = a; m <= b; m += st) SLOTS.push(hm(m));
+    dayList = []; var d = new Date(), n = 0;
+    while(dayList.length < Math.max(1, Math.min(14, +c.ahead || 5)) && n++ < 60){
+      d = new Date(d.getTime() + 86400000);
+      if((c.days||[]).indexOf(d.getDay()) > -1) dayList.push(new Date(d.getTime()));
+    }
+    if(typeof pickDay !== "undefined"){ pickDay = 0; pickSlot = null; meetDay = 0; meetSlot = null; }
+  }
+  var d0;
   var booked = {}; // key "dayIndex|slot" -> true
-  dayList.forEach(function(d,di){ [1,4,6].forEach(function(k){ booked[di+"|"+SLOTS[(k+di*2)%SLOTS.length]] = true; }); });
   var pickDay = 0, pickSlot = null;
+  applyBookCfg();
+  dayList.forEach(function(d,di){ [1,4,6].forEach(function(k){ booked[di+"|"+SLOTS[(k+di*2)%SLOTS.length]] = true; }); });
   var bookings = [];
   function bookDraw(){
     $("#days").innerHTML = dayList.map(function(d,i){ return '<button type="button" class="day" data-d="'+i+'" aria-pressed="'+(i===pickDay)+'">'+fmtDay.format(d)+'</button>'; }).join("");
@@ -1124,6 +1155,24 @@ img{max-width:100%}
     bookDraw(); toast("تم تأكيد الحجز");
   });
   bookDraw();
+
+  /* ---------- إعداد ساعات الحجز ---------- */
+  var DAYN = ["الأحد","الاثنين","الثلاثاء","الأربعاء","الخميس","الجمعة","السبت"];
+  function bcfgFill(){
+    $("#bcDays").innerHTML = DAYN.map(function(n,i){ return '<label style="display:flex;gap:4px;align-items:center"><input type="checkbox" data-bcd="'+i+'" '+(BCFG.days.indexOf(i)>-1?'checked':'')+'> '+n+'</label>'; }).join("");
+    $("#bcFrom").value = BCFG.from; $("#bcTo").value = BCFG.to; $("#bcStep").value = String(BCFG.step); $("#bcAhead").value = BCFG.ahead;
+  }
+  bcfgFill();
+  $("#bcfgForm").addEventListener("submit", function(e){
+    e.preventDefault();
+    var c = {days:[], from:$("#bcFrom").value, to:$("#bcTo").value, step:+$("#bcStep").value, ahead:+$("#bcAhead").value || 5};
+    $$("[data-bcd]").forEach(function(x){ if(x.checked) c.days.push(+x.dataset.bcd); });
+    if(!c.days.length){ toast("اختاري يومًا واحدًا على الأقل"); return; }
+    if(tmin(c.to) < tmin(c.from)){ toast("وقت النهاية قبل البداية"); return; }
+    BCFG = c; applyBookCfg(); booked = {}; bookDraw(); if(!$("#psyMeet").hidden) meetDraw();
+    if(DB && isStaff) DB.doc("config/slots").set(c).then(function(){ toast("تم حفظ ساعات الحجز"); }, function(){ toast("تعذّر الحفظ"); });
+    else toast("تم التطبيق (بدون حفظ)");
+  });
 
 /* ---------- teacher forms (Word export) ---------- */
   var GR = {1:"أول ثانوي", 2:"ثاني ثانوي", 3:"ثالث ثانوي"};
@@ -1816,6 +1865,16 @@ img{max-width:100%}
     var js = JSON.stringify([students, teachers]); if(js === lastLists) return; lastLists = js;
     DB.doc("lists/main").set({students:students, teachers:teachers}).catch(function(){ toast("تعذّر حفظ القوائم"); });
   }
+
+  $("#impFile").addEventListener("change", function(){
+    var f = this.files[0]; if(!f) return; var inp = this;
+    f.text().then(function(t){
+      var d = JSON.parse(t), ns = d.students || [], nt = d.teachers || [];
+      var ids = {}; students.forEach(function(x){ ids[x.id] = 1; }); ns.forEach(function(x){ if(!ids[x.id]) students.push(x); });
+      ids = {}; teachers.forEach(function(x){ ids[x.id] = 1; }); nt.forEach(function(x){ if(!ids[x.id]) teachers.push(x); });
+      renderTabs(); renderList(); saveLists(); toast("تم إدراج "+ns.length+" طالبة و"+nt.length+" موظفة"); inp.value = "";
+    }).catch(function(){ toast("الملف غير صالح"); });
+  });
   $("#listTable").addEventListener("click", saveLists);
   $("#listTable").addEventListener("change", saveLists);
   $("#addForm").addEventListener("submit", saveLists);
@@ -1850,11 +1909,22 @@ img{max-width:100%}
         return DB.doc(c + "/" + myId).get().then(function(d){ if(d.exists && d.data().items) MINE[c] = d.data().items.slice(); }, function(){});
       })).then(function(){});
     }
+    var lastSlotKeys = {};
+    function onSlotsRefresh(){
+      booked = {};
+      dayList.forEach(function(d,di){ SLOTS.forEach(function(t){ if(lastSlotKeys[isoDay(d) + "|" + t]) booked[di + "|" + t] = true; }); });
+    }
     onColl("slots", function(sn){
-      var keys = {}; flat(sn).forEach(function(k){ keys[k] = 1; });
+      var keys = {}; flat(sn).forEach(function(k){ keys[k] = 1; }); lastSlotKeys = keys;
       booked = {};
       dayList.forEach(function(d,di){ SLOTS.forEach(function(t){ if(keys[isoDay(d) + "|" + t]) booked[di + "|" + t] = true; }); });
       bookDraw(); if(!$("#psyMeet").hidden) meetDraw();
+    });
+    onDoc("config/slots", function(sn){
+      if(!sn.exists) return; var c = sn.data(); if(!c || !c.days) return;
+      if(JSON.stringify(c) === JSON.stringify(BCFG)) return;
+      BCFG = c; applyBookCfg(); bcfgFill(); booked = {};
+      onSlotsRefresh && onSlotsRefresh(); bookDraw(); if(!$("#psyMeet").hidden) meetDraw();
     });
     onDoc("config/scales", function(sn){
       if(sn.exists && sn.data().list && sn.data().list.length){ scales = sn.data().list; scalesDraw(); }
