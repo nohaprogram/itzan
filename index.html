@@ -1610,19 +1610,41 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     try{
       m.textContent = "جارٍ قراءة الملف…";
       var z = await JSZip.loadAsync(f), data = JSON.parse(await z.file("evidence.json").async("string")), added = 0, skipped = 0, newItems = [];
-      var renamed = 0;
+      var renamed = 0, vidAdded = 0;
       for(var i = 0; i < data.items.length; i++){
         var it = data.items[i], list = arr(PROG.evidence, it.pid);
         if(it.ini){
-          var il = arr(PROG.initiatives, it.pid);
-          if(!il.some(function(x){ return x.t === it.t; })){ il.push({t:it.t, st:"", d:it.d, type:"منصة", url:it.url, pub:true, fs:[]}); added++; } else skipped++;
+          var ifs = [];
+          var il = arr(PROG.initiatives, it.pid), ie = il.filter(function(x){ return x.t === it.t; })[0];
           var el = list.filter(function(x){ return x.t === it.t; })[0];
-          if(!el) list.push({t:it.t, dt:"", d:it.d, url:it.url, ul:it.ul, fs:[]});
+          var have = (ie && ie.fs && ie.fs.length) || (el && el.fs && el.fs.length);
+          if(!have) for(var k = 0; k < (it.imgs || []).length; k++){
+            m.textContent = "رفع صورة المنصة…";
+            var bl = await z.file(it.imgs[k]).async("blob"), r2 = await ASSETS.upload(new File([bl], it.imgs[k], {type:"image/jpeg"}));
+            ifs.push({id:r2.id, url:r2.url, t:r2.contentType || "image/jpeg", n:it.imgs[k]});
+          }
+          if(!ie){ il.push({t:it.t, st:"", d:it.d, type:"منصة", url:it.url, pub:true, fs:ifs}); added++; } else { if(ifs.length) ie.fs = ifs; skipped++; }
+          if(!el) list.push({t:it.t, dt:"", d:it.d, url:it.url, ul:it.ul, fs:ifs}); else if(ifs.length) el.fs = ifs;
           continue;
         }
+        var ex0 = null;
         if(it.was){
           var ws = [].concat(it.was), old = list.filter(function(x){ return ws.indexOf(x.t) > -1 && x.dt === it.dt; })[0];
-          if(old){ old.t = it.t; renamed++; continue; }
+          if(old){ old.t = it.t; renamed++; ex0 = old; }
+        }
+        if(!ex0) ex0 = list.filter(function(x){ return x.t === it.t && x.dt === it.dt; })[0];
+        if(ex0){
+          if((it.vids || []).length && !(ex0.fs || []).some(function(f){ return /^video\//.test(f.t); })){
+            ex0.fs = ex0.fs || [];
+            for(var q0 = 0; q0 < it.vids.length; q0++){
+              m.textContent = "رفع الفيديو: " + (i+1) + " من " + data.items.length + " (" + (q0+1) + "/" + it.vids.length + ")";
+              var vb0 = await z.file(it.vids[q0]).async("blob");
+              var vr0 = await ASSETS.upload(new File([vb0], it.vids[q0], {type:"video/mp4"}));
+              ex0.fs.push({id:vr0.id, url:vr0.url, t:vr0.contentType || "video/mp4", n:it.vids[q0]});
+            }
+            vidAdded++;
+          }
+          continue;
         }
         if(list.some(function(x){ return x.t === it.t && x.dt === it.dt; }) || newItems.some(function(x){ return x.pid === it.pid && x.e.t === it.t && x.e.dt === it.dt; })){ skipped++; continue; }
         var fs = [];
@@ -1633,11 +1655,17 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
           var r = await ASSETS.upload(file);
           fs.push({id:r.id, url:r.url, t:r.contentType || "image/jpeg", n:it.imgs[j]});
         }
+        for(var q = 0; q < (it.vids || []).length; q++){
+          m.textContent = "رفع الفيديو: " + (i+1) + " من " + data.items.length + " (" + (q+1) + "/" + it.vids.length + ")";
+          var vb = await z.file(it.vids[q]).async("blob");
+          var vr = await ASSETS.upload(new File([vb], it.vids[q], {type:"video/mp4"}));
+          fs.push({id:vr.id, url:vr.url, t:vr.contentType || "video/mp4", n:it.vids[q]});
+        }
         newItems.push({pid:it.pid, e:{t:it.t, dt:it.dt, d:it.d, fs:fs}}); added++;
       }
       newItems.forEach(function(n){ var l = arr(PROG.evidence, n.pid); if(!l.some(function(x){ return x.t === n.e.t && x.dt === n.e.dt; })) l.push(n.e); });
       saveStf(); savePub();
-      m.textContent = "تم: أُضيف " + added + " شاهدًا" + (renamed ? " وعُدّل اسم " + renamed : "") + (skipped ? " وتُخطّي " + skipped + " موجودًا مسبقًا" : "") + ".";
+      m.textContent = "تم: أُضيف " + added + " شاهدًا" + (renamed ? " وعُدّل اسم " + renamed : "") + (vidAdded ? " وأُضيفت فيديوهات إلى " + vidAdded : "") + (skipped ? " وتُخطّي " + skipped + " موجودًا مسبقًا" : "") + ".";
       if(curPid) progDetail(); toast("تم استيراد الشواهد");
     }catch(e){ m.textContent = "تعذّر الاستيراد: " + (e && e.message || ""); }
     inp.value = "";
