@@ -237,14 +237,18 @@ img{max-width:100%}
 body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teacher #v-lists h3.section-title{display:none!important}
 .thw{display:inline-flex;flex-direction:column;gap:4px;align-items:center}.thw.off .th{opacity:.35}
 .hstats{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin:14px 0 26px}
-.hst{background:var(--accent-soft);border-radius:22px;padding:20px 14px 18px;text-align:center;box-shadow:0 6px 16px rgba(60,40,90,.14)}
-.hst .ico{width:64px;height:64px;margin:0 auto 6px;display:grid;place-items:center;color:var(--accent)}
+.hst{--hc:#12958f;--hbg:#e3f3f1;background:var(--hbg);border-radius:22px;padding:20px 14px 18px;text-align:center;box-shadow:0 6px 16px rgba(60,40,90,.14)}
+.hst .ico{width:64px;height:64px;margin:0 auto 6px;display:grid;place-items:center;color:var(--hc)}
 .hst .ico svg{width:56px;height:56px;fill:none;stroke:currentColor;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round}
-.hst b{display:block;font-size:40px;font-weight:800;font-family:var(--f-display);line-height:1.25;color:var(--accent)}
+.hst b{display:block;font-size:40px;font-weight:800;font-family:var(--f-display);line-height:1.25;color:var(--hc)}
 .hst strong{display:block;font-size:16px;font-weight:500;color:var(--fg);margin-top:2px}
 .hst em{display:none}
 .hst small{display:block;color:var(--muted);font-size:13px;line-height:1.7;margin-top:6px}
-.hst.tot{background:var(--accent)}
+.hst.tot{background:var(--hc)}
+.hstats.prg{grid-template-columns:repeat(auto-fit,minmax(150px,1fr));margin-top:0}
+.hstats.prg .hst{padding:14px 10px}.hstats.prg .hst b{font-size:30px}.hstats.prg .hst strong{font-size:14px}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]) .hst{--hbg:#16393a;--hc:#5fd1c9}:root:not([data-theme="light"]) .hst.tot{--hc:#12958f}}
+:root[data-theme="dark"] .hst{--hbg:#16393a;--hc:#5fd1c9}:root[data-theme="dark"] .hst.tot{--hc:#12958f}
 .hst.tot .ico,.hst.tot b,.hst.tot strong{color:#fff}
 .hsrow{display:grid;grid-template-columns:80px 1fr 2fr 110px auto;gap:8px;margin-bottom:8px}
 @media(max-width:600px){.hsrow{grid-template-columns:1fr 1fr}}
@@ -283,6 +287,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
 
   <div class="sec-h"><div><div class="eyebrow">منجزات هذا العام</div><h2>مؤشرات الأداء</h2></div></div>
   <div class="hstats" id="hStats"></div>
+  <div class="hstats prg" id="hProgs"></div>
   <div id="hPeopleWrap" hidden>
     <div class="sec-h"><div><div class="eyebrow">مجتمع المدرسة</div><h2>المدرسة بالأرقام</h2></div></div>
     <div class="hstats" id="hPeople"></div>
@@ -2086,7 +2091,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
       onSlotsRefresh && onSlotsRefresh(); bookDraw(); if(!$("#psyMeet").hidden) meetDraw();
     });
     onDoc("config/homeStats", function(sn){
-      if(sn.exists && !isStaff && sn.data().tot !== undefined){ HSTTOT = sn.data().tot; }
+      if(sn.exists && !isStaff && sn.data().tot !== undefined){ HSTTOT = sn.data().tot; HPROGS = sn.data().progs || []; }
       if(sn.exists && sn.data().people && !isStaff){ PEOPLE = sn.data().people; peopleDraw(); }
       if(sn.exists && sn.data().items && sn.data().items.length){ HST = sn.data().items.map(function(x){ return {l:x.l, s:x.s || "", m:x.m || 0, n:x.n || 0, auto:x.a || [], ic:x.ic || "star"}; }); if(isStaff){ hstCalc(); } hstDraw(); }
     });
@@ -2124,7 +2129,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
   /* ---------- إحصائيات الرئيسية ---------- */
   // كل بند: l العنوان، s التفاصيل (اختياري)، m عدد يدوي يُضاف، n المحسوب النهائي (يُحفظ للزوار)
   var HST = [{l:"لقاءات الأمهات", s:"", m:0, n:0, ic:"family"}, {l:"استضافات خارجية", s:"", m:1, n:1, ic:"mic"}];
-  var hstLast = "", HSTTOT = 0;
+  var hstLast = "", HSTTOT = 0, HPROGS = [];
   var AR = "٠١٢٣٤٥٦٧٨٩";
   function arNum(n){ return String(n).replace(/\d/g, function(d){ return "٠١٢٣٤٥٦٧٨٩"[+d]; }); }
   var ICONS = {
@@ -2144,7 +2149,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
   function icoSvg(k){ return '<svg viewBox="0 0 24 24" aria-hidden="true">'+(ICONS[k] || ICONS.star)[1]+'</svg>'; }
   function evCats(){ return HST.map(function(x){ return x.l; }); }
   function hstCalc(){
-    var dc = 0; Object.keys(PROG.evidence).forEach(function(pid){ PROG.evidence[pid].forEach(function(e){ if(!e.nc) dc++; }); }); if(isStaff) HSTTOT = dc;
+    var dc = 0; Object.keys(PROG.evidence).forEach(function(pid){ PROG.evidence[pid].forEach(function(e){ if(!e.nc) dc++; }); }); if(isStaff){ HSTTOT = dc; HPROGS = Object.keys(PIDS).map(function(pid){ var n = (PROG.evidence[pid] || []).filter(function(e){ return !e.nc; }).length; return {p:PIDS[pid].t, n:n}; }).filter(function(x){ return x.n > 0; }); }
     HST.forEach(function(x){
       var cnt = 0, names = [];
       Object.keys(PROG.evidence).forEach(function(pid){ PROG.evidence[pid].forEach(function(e){
@@ -2157,14 +2162,15 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     $("#hStats").innerHTML = (HSTTOT > 0 ? '<div class="hst tot"><div class="ico">'+icoSvg("star")+'</div><b>'+arNum(HSTTOT)+'</b><strong>البرامج</strong></div>' : '')+HST.map(function(x){
       var det = x.s || (x.auto && x.auto.length ? x.auto.join(" · ") : "");
       return '<div class="hst"><div class="ico">'+icoSvg(x.ic)+'</div><b>'+arNum(+x.n || 0)+'</b><strong>'+esc(x.l)+'</strong>'+(det?'<small>'+esc(det)+'</small>':'')+'</div>'; }).join("");
+    $("#hProgs").innerHTML = HPROGS.map(function(x){ return '<div class="hst"><b>'+arNum(x.n)+'</b><strong>'+esc(x.p)+'</strong></div>'; }).join("");
     if(isStaff) $("#hsRows").innerHTML = HST.map(function(x,i){ return '<div class="hsrow"><input type="number" min="0" data-hn="'+i+'" value="'+(+x.m||0)+'" aria-label="عدد يدوي إضافي" title="عدد يدوي يُضاف إلى المحسوب من الشواهد"><input type="text" data-hl="'+i+'" value="'+esc(x.l)+'" aria-label="العنوان" placeholder="العنوان"><input type="text" data-hs="'+i+'" value="'+esc(x.s||"")+'" aria-label="التفاصيل" placeholder="التفاصيل (إن تُرك فارغًا تُكتب أسماء الشواهد تلقائيًا)"><select data-hi="'+i+'" aria-label="الأيقونة">'+Object.keys(ICONS).map(function(k){ return '<option value="'+k+'"'+(x.ic===k?' selected':'')+'>'+ICONS[k][0]+'</option>'; }).join("")+'</select><button class="x" type="button" data-hd="'+i+'">حذف</button></div>'; }).join("");
   }
   function hstSave(force){
     if(!DB || !isStaff) return;
     hstCalc();
     var js = JSON.stringify(HST.map(function(x){ return {l:x.l, s:x.s||"", m:+x.m||0, n:x.n, a:x.auto||[], ic:x.ic||"star"}; }));
-    if(!force && (HSTTOT + js) === hstLast) return; hstLast = HSTTOT + js;
-    var pr = DB.doc("config/homeStats").set({items:JSON.parse(js), people:PEOPLE || null, tot:HSTTOT}); pr.catch(function(){}); return pr;
+    if(!force && (HSTTOT + js + JSON.stringify(HPROGS)) === hstLast) return; hstLast = HSTTOT + js + JSON.stringify(HPROGS);
+    var pr = DB.doc("config/homeStats").set({items:JSON.parse(js), people:PEOPLE || null, tot:HSTTOT, progs:HPROGS}); pr.catch(function(){}); return pr;
   }
   function evCatSelect(cur, attrs){
     return '<select '+attrs+'><option value="">بدون تصنيف</option>'+evCats().map(function(c){ return '<option'+(c === cur ? ' selected' : '')+'>'+esc(c)+'</option>'; }).join("")+'</select>';
