@@ -123,13 +123,21 @@
     catch(e){ staffFlag = false; }
     return staffFlag;
   }
+  var roleCache = null;
+  async function staffRole(){
+    if(roleCache) return roleCache;
+    try{ var r = await rest("rpc/staff_role", {method:"POST", headers:{"Content-Type":"application/json"}, body:"{}"}); roleCache = (r === "teacher") ? "teacher" : "counselor"; }
+    catch(e){ roleCache = "counselor"; }
+    return roleCache;
+  }
   var USER = { canEdit: checkStaff, id: async function(){ return (await ensure()).uid; }, isOwner: checkStaff };
 
   window.itzanAuth = {
     on: ON,
+    role: staffRole,
     login: async function(email, pw){
       var r = await authCall("token?grant_type=password", {email:email, password:pw});
-      var n = norm(r); n.anon = false; save(n); staffFlag = null;
+      var n = norm(r); n.anon = false; save(n); staffFlag = null; roleCache = null;
       var ok = await checkStaff();
       if(!ok){ save(null); staffFlag = null; throw new Error("not-staff"); }
       return true;

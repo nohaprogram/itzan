@@ -20,3 +20,6 @@
 5. من **Project Settings ← API** انسخي `Project URL` و`anon public` إلى `config.js`.
 6. **Vercel**: Add New Project ← اختاري هذا المستودع ← Deploy (لا إعدادات إضافية).
 7. افتحي `رابط-الموقع/admin` وسجلي الدخول.
+
+## دور «معلمة»
+شغّلي `supabase-teachers.sql` مرة واحدة، ثم أضيفي كل معلمة بالسطر الأخير فيه (`role = 'teacher'`). المعلمة ترى نماذج المعلمات وشواهد البرامج وقراءة القوائم فقط.

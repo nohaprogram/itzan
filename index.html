@@ -234,6 +234,7 @@ body{margin:0}
 img{max-width:100%}
 [hidden]{display:none!important}
 :root{color-scheme:light}
+body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teacher #v-lists h3.section-title{display:none!important}
 </style>
 </head>
 <body>
@@ -660,6 +661,7 @@ img{max-width:100%}
     var h = (location.hash || "#home").slice(1);
     if(views.indexOf(h) < 0) h = "home";
     if(!isStaff && ["lists","tforms","staff"].indexOf(h) >= 0) h = "home";
+    if(isStaff && !isCounselor && h === "staff") h = "tforms";
     views.forEach(function(v){ $("#v-"+v).hidden = (v !== h); });
     var navKey = {lists:"staff", tforms:"staff", surveys:"services", booking:"services", scales:"services"}[h] || h;
     $$("#nav a").forEach(function(a){
@@ -1852,7 +1854,7 @@ img{max-width:100%}
   $("#inboxTable").addEventListener("change", refreshDash);
 
   /* ---------- roles and storage ---------- */
-  var isStaff = false, DB = null, myId = null, statusMap = {}, lastLists = "[[],[]]";
+  var isStaff = false, DB = null, myId = null, statusMap = {}, lastLists = "[[],[]]", isCounselor = true;
   var MINE = {inbox:[], bookings:[], slots:[], scaleResults:[], parts:[]}, chain = Promise.resolve();
   function sendFail(){ toast("تعذّر الإرسال. تأكدي من فتح الرابط بحسابك."); }
   function store(coll, item){
@@ -1871,7 +1873,7 @@ img{max-width:100%}
   function onDoc(path, fn){ try{ DB.doc(path).onSnapshot(fn, function(){}); }catch(e){} }
   function applyStatus(){ inbox.forEach(function(r){ if(statusMap[r.id]) r.st = statusMap[r.id]; }); }
   function saveLists(){
-    if(!DB || !isStaff) return;
+    if(!DB || !isStaff || !isCounselor) return;
     var js = JSON.stringify([students, teachers]); if(js === lastLists) return; lastLists = js;
     DB.doc("lists/main").set({students:students, teachers:teachers}).catch(function(){ toast("تعذّر حفظ القوائم"); });
   }
@@ -1898,6 +1900,10 @@ img{max-width:100%}
   });
   function applyRole(){
     $$("[data-staff]").forEach(function(el){ el.hidden = !isStaff; });
+    document.body.classList.toggle("teacher", isStaff && !isCounselor);
+    var nv = $('#nav a[href="#staff"], #nav a[href="#tforms"][data-tnav]');
+    if(nv && isStaff && !isCounselor){ nv.setAttribute("href","#tforms"); nv.setAttribute("data-tnav","1"); nv.textContent = "نماذج المعلمات"; }
+    else if(nv && nv.hasAttribute("data-tnav")){ nv.setAttribute("href","#staff"); nv.removeAttribute("data-tnav"); nv.textContent = "لوحة المرشدة"; }
     if(curPid) progDetail();
     route();
   }
@@ -1905,7 +1911,8 @@ img{max-width:100%}
     try{
       if(window.claude && claude.use){
         var u = await claude.use("user");
-        if(u){ isStaff = await u.canEdit(); try{ myId = await u.id(); }catch(e){} }
+        if(u){ isStaff = await u.canEdit(); try{ myId = await u.id(); }catch(e){}
+          if(isStaff && window.itzanAuth && itzanAuth.role) isCounselor = (await itzanAuth.role()) !== "teacher"; }
         DB = await claude.use("db");
         try{ ASSETS = await claude.use("assets"); }catch(e){ ASSETS = null; }
       }
