@@ -238,8 +238,8 @@ img{max-width:100%}
 </head>
 <body>
 
-<script src="config.js"></script>
-<script src="backend.js"></script>
+<script src="/config.js"></script>
+<script src="/backend.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
 <header class="top">
@@ -1318,7 +1318,7 @@ img{max-width:100%}
   async function fillDocx(key, vals){
     if(!window.JSZip) throw new Error("jszip");
     if(!TPL){
-      var r = await fetch("templates.json"); if(!r.ok) throw new Error("template");
+      var r = await fetch("/templates.json"); if(!r.ok) throw new Error("template");
       TPL = await r.json();
     }
     var raw = atob(TPL[key]), bytes = new Uint8Array(raw.length);
