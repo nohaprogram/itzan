@@ -23,3 +23,6 @@
 
 ## دور «معلمة»
 شغّلي `supabase-teachers.sql` مرة واحدة، ثم أضيفي كل معلمة بالسطر الأخير فيه (`role = 'teacher'`). المعلمة ترى نماذج المعلمات وشواهد البرامج وقراءة القوائم فقط.
+
+## إضافة الموظفات من الموقع
+لوحة المرشدة ← «حسابات الموظفات». تحتاج متغيرًا سريًا في Vercel: Settings ← Environment Variables ← الاسم `SUPABASE_SERVICE_KEY` والقيمة مفتاح `secret` من Supabase ← Settings ← API Keys. ثم Redeploy. لا يوضع في GitHub.

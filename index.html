@@ -314,6 +314,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     <button class="tab" type="button" data-d="parts" aria-pressed="false">طلبات المشاركة</button>
     <button class="tab" type="button" data-d="fup" aria-pressed="false">نماذج المتابعة</button>
     <button class="tab" type="button" data-d="surv" aria-pressed="false">الاستبانات</button>
+    <button class="tab" type="button" data-d="acc" aria-pressed="false">حسابات الموظفات</button>
   </div>
   <div id="d-inbox">
 <div id="inboxPanel" data-staff hidden>
@@ -381,6 +382,19 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     <p class="hint" id="fupNote" style="margin:10px 0"></p>
     <div id="fupRows"></div>
     <div class="actions"><button class="btn" type="button" id="fupDl">تنزيل النموذج (Word)</button><button class="btn ghost" type="button" id="fupClear">مسح النموذج</button><span class="hint" id="fupSave" aria-live="polite"></span></div>
+  </div>
+  <div id="d-acc" hidden>
+    <div data-staff hidden>
+      <h3 class="section-title">إضافة معلمة أو مرشدة</h3>
+      <form class="form card" id="accForm">
+        <div class="row"><label for="accE">البريد الإلكتروني<input type="email" id="accE" dir="ltr" required></label>
+        <label for="accP">كلمة المرور (٨ أحرف فأكثر)<input type="text" id="accP" dir="ltr" minlength="8" required></label>
+        <label for="accR">الصلاحية<select id="accR"><option value="teacher">معلمة (نماذج وشواهد فقط)</option><option value="counselor">مرشدة (كل شيء)</option></select></label></div>
+        <div><button class="btn" type="submit">إضافة الحساب</button> <span id="accMsg" style="font-size:14px;color:var(--muted)"></span></div>
+      </form>
+      <h3 class="section-title">الحسابات الحالية</h3>
+      <div class="scroll"><table id="accTable"></table></div>
+    </div>
   </div>
   <div id="d-surv" hidden>
 <div id="s-builder">
@@ -1834,7 +1848,8 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
 
   /* ---------- counselor dashboard ---------- */
   function dashTab(k){
-    ["inbox","book","scale","parts","fup","surv"].forEach(function(x){ $("#d-"+x).hidden = x !== k; });
+    ["inbox","book","scale","parts","fup","surv","acc"].forEach(function(x){ $("#d-"+x).hidden = x !== k; });
+    if(k === "acc" && typeof accLoad === "function") accLoad();
     $$("#dashTabs .tab").forEach(function(t){ t.setAttribute("aria-pressed", t.dataset.d === k); });
   }
   function dashDraw(){
@@ -1973,6 +1988,35 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
       renderList(); if(typeof scalesDraw === "function") scalesDraw();
     });
   })();
+
+  /* ---------- حسابات الموظفات ---------- */
+  var ACCERR = {"not-counselor":"هذه الصلاحية للمرشدة فقط.","bad-email":"البريد غير صحيح.","short-password":"كلمة المرور أقل من ٨ أحرف.","no-service-key":"لم يُضبط المفتاح السري في Vercel بعد.","create-failed":"تعذّر إنشاء الحساب.","self":"لا يمكن حذف حسابك."};
+  async function accCall(o){
+    var A = window.itzanAuth; if(!A || !A.token) throw new Error("no-auth");
+    var r = await fetch("/api/staff", {method:"POST", headers:{"Content-Type":"application/json", Authorization:"Bearer "+(await A.token())}, body:JSON.stringify(o)});
+    var d = await r.json().catch(function(){ return {}; });
+    if(!r.ok) throw new Error(d.error || "fail");
+    return d;
+  }
+  async function accLoad(){
+    try{
+      var d = await accCall({action:"list"});
+      $("#accTable").innerHTML = '<thead><tr><th>البريد</th><th>الصلاحية</th><th></th></tr></thead><tbody>'+
+        d.list.map(function(x){ return '<tr><td dir="ltr">'+esc(x.email)+'</td><td>'+(x.role==="teacher"?"معلمة":"مرشدة")+'</td><td><button class="btn" type="button" data-acc-rm="'+esc(x.email)+'">إزالة الصلاحية</button></td></tr>'; }).join("")+'</tbody>';
+    }catch(e){ $("#accTable").innerHTML = '<tbody><tr><td class="empty">'+esc(ACCERR[e.message] || "تعذّر تحميل الحسابات.")+'</td></tr></tbody>'; }
+  }
+  $("#accForm").addEventListener("submit", async function(e){
+    e.preventDefault(); var m = $("#accMsg"); m.textContent = "جارٍ الإضافة…";
+    try{
+      await accCall({action:"add", email:$("#accE").value, password:$("#accP").value, role:$("#accR").value});
+      m.textContent = "تمت الإضافة. أعطيها البريد وكلمة المرور."; $("#accE").value = ""; $("#accP").value = ""; accLoad();
+    }catch(err){ m.textContent = ACCERR[err.message] || "تعذّرت الإضافة."; }
+  });
+  $("#accTable").addEventListener("click", async function(e){
+    var b = e.target.closest("[data-acc-rm]"); if(!b) return;
+    try{ await accCall({action:"remove", email:b.dataset.accRm}); accLoad(); toast("أُزيلت الصلاحية"); }
+    catch(err){ toast(ACCERR[err.message] || "تعذّرت الإزالة"); }
+  });
 
   /* ---------- دخول الموظفات ---------- */
   (function(){

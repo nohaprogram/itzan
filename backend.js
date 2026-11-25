@@ -135,6 +135,7 @@
   window.itzanAuth = {
     on: ON,
     role: staffRole,
+    token: async function(){ return (await ensure()).at; },
     login: async function(email, pw){
       var r = await authCall("token?grant_type=password", {email:email, password:pw});
       var n = norm(r); n.anon = false; save(n); staffFlag = null; roleCache = null;
