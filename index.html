@@ -1615,7 +1615,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
           continue;
         }
         if(it.was){
-          var old = list.filter(function(x){ return x.t === it.was && x.dt === it.dt; })[0];
+          var ws = [].concat(it.was), old = list.filter(function(x){ return ws.indexOf(x.t) > -1 && x.dt === it.dt; })[0];
           if(old){ old.t = it.t; renamed++; continue; }
         }
         if(list.some(function(x){ return x.t === it.t && x.dt === it.dt; }) || newItems.some(function(x){ return x.pid === it.pid && x.e.t === it.t && x.e.dt === it.dt; })){ skipped++; continue; }
