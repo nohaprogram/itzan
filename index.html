@@ -235,6 +235,7 @@ img{max-width:100%}
 [hidden]{display:none!important}
 :root{color-scheme:light}
 body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teacher #v-lists h3.section-title{display:none!important}
+.thw{display:inline-flex;flex-direction:column;gap:4px;align-items:center}.thw.off .th{opacity:.35}
 </style>
 </head>
 <body>
@@ -1582,7 +1583,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     PROG.apps = o;
     var pe = {};
     Object.keys(PROG.evidence).forEach(function(pid){
-      var l = PROG.evidence[pid].filter(function(x){ return x.pub; }).map(function(x){ return {t:x.t, dt:x.dt || "", d:x.d || "", url:x.url || "", ul:x.ul || "", fs:(x.fs || [])}; });
+      var l = PROG.evidence[pid].filter(function(x){ return x.pub; }).map(function(x){ return {t:x.t, dt:x.dt || "", d:x.d || "", url:x.url || "", ul:x.ul || "", fs:(x.fs || []).filter(function(f){ return !f.h; })}; });
       if(l.length) pe[pid] = l;
     });
     PROG.pubEv = pe;
@@ -1670,6 +1671,14 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     }catch(e){ m.textContent = "تعذّر الاستيراد: " + (e && e.message || ""); }
     inp.value = "";
   });
+  function thumbsStaff(fs, ei){
+    if(!fs || !fs.length) return "";
+    return '<div class="thumbs">'+fs.map(function(f, j){
+      var one = /^video\//.test(f.t) ? '<video class="th" src="'+esc(f.url)+'" controls preload="metadata"></video>'
+        : '<a href="'+esc(f.url)+'" target="_blank" rel="noopener"><img class="th" src="'+esc(f.url)+'" alt="'+esc(f.n||"")+'" loading="lazy"></a>';
+      return '<div class="thw'+(f.h?' off':'')+'">'+one+'<button class="btn small ghost" type="button" data-act="filevis" data-i="'+ei+'" data-j="'+j+'">'+(f.h?'🚫 مخفي':'👁 ظاهر')+'</button></div>';
+    }).join("")+'</div>';
+  }
   function dropZone(key){
     if(!ASSETS) return '<div class="hint">رفع الصور والفيديوهات غير متاح لهذا الحساب.</div>';
     return '<div class="drop" data-drop="'+key+'"><div>اسحبي الصور والفيديوهات إلى هنا أو <label class="btn small ghost" style="cursor:pointer">اختيار ملفات<input type="file" multiple accept="image/*,video/*" data-pick="'+key+'" hidden></label></div><div class="hint" id="pend-'+key+'">'+pendText(key)+'</div></div>';
@@ -1726,7 +1735,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
       h += '<div class="zone zone-t"><h3>للمرشدة والمعلمات الموكلات</h3><div class="hint">لا يظهر هذا القسم للطالبات.</div>'+
         '<div class="tabs" role="group" aria-label="أقسام البرنامج">'+T.map(function(t){ return '<button class="tab" type="button" data-act="stab" data-t="'+t[0]+'" aria-pressed="'+(stTab===t[0])+'">'+t[1]+'</button>'; }).join("")+'</div>';
       if(stTab === "ev"){
-        h += (ev.length ? '<ul class="plain">'+ev.map(function(x,i){ return '<li><b>'+esc(x.t)+'</b>'+(x.dt?' · '+esc(x.dt):'')+(x.d?'<div style="font-size:14px">'+esc(x.d)+'</div>':'')+(safeUrl(x.url)?'<div style="font-size:14px"><a href="'+esc(safeUrl(x.url))+'" target="_blank" rel="noopener">🔗 '+esc(x.ul || "فتح الرابط")+'</a></div>':'')+thumbs(x.fs)+' <button class="btn small ghost" type="button" data-act="evpub" data-i="'+i+'">'+(x.pub?'👁 يظهر للطالبات وأولياء الأمور — إخفاء':'🔒 مخفي — إظهار للجميع')+'</button>'+rmBtn("evidence",pid,i)+'</li>'; }).join("")+'</ul>' : '<p class="hint">لا توجد شواهد بعد.</p>')+
+        h += (ev.length ? '<ul class="plain">'+ev.map(function(x,i){ return '<li><b>'+esc(x.t)+'</b>'+(x.dt?' · '+esc(x.dt):'')+(x.d?'<div style="font-size:14px">'+esc(x.d)+'</div>':'')+(safeUrl(x.url)?'<div style="font-size:14px"><a href="'+esc(safeUrl(x.url))+'" target="_blank" rel="noopener">🔗 '+esc(x.ul || "فتح الرابط")+'</a></div>':'')+thumbsStaff(x.fs, i)+' <button class="btn small ghost" type="button" data-act="evpub" data-i="'+i+'">'+(x.pub?'👁 يظهر للطالبات وأولياء الأمور — إخفاء':'🔒 مخفي — إظهار للجميع')+'</button>'+rmBtn("evidence",pid,i)+'</li>'; }).join("")+'</ul>' : '<p class="hint">لا توجد شواهد بعد.</p>')+
           '<details class="addbox"><summary>+ إضافة شاهد</summary><form class="form" data-f="ev"><div class="row"><label for="evT">عنوان الشاهد<input type="text" id="evT" required placeholder="مثال: محاضرة توعوية"></label><label for="evDt">التاريخ<input type="text" id="evDt" placeholder="مثال: ١٤٤٨/٠٣/١٥"></label></div><label for="evD">وصف مختصر<textarea id="evD"></textarea></label><label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="evP"> يظهر هذا الشاهد لأولياء الأمور والطالبات</label><div class="row"><label for="evU">رابط موقع أو منصة (اختياري)<input type="url" id="evU" dir="ltr" placeholder="https://"></label><label for="evUl">اسم الرابط<input type="text" id="evUl" placeholder="مثال: منصة سَعَة"></label></div>'+dropZone("ev")+'<div><button class="btn" type="submit">إضافة الشاهد</button></div></form></details>';
       } else if(stTab === "ini"){
         h += (ini.length ? '<ul class="plain">'+ini.map(function(x,i){ return '<li><b>'+esc(x.t)+'</b>'+(x.type?' <span class="tag">'+esc(x.type)+'</span>':'')+(safeUrl(x.url)?' <a href="'+esc(safeUrl(x.url))+'" target="_blank" rel="noopener">فتح الرابط ‹</a>':'')+' <select data-ini="'+pid+'|'+i+'" aria-label="حالة المبادرة">'+INI_ST.map(function(o){ return '<option'+(o===x.st?' selected':'')+'>'+o+'</option>'; }).join("")+'</select>'+(x.d?'<div style="font-size:14px">'+esc(x.d)+'</div>':'')+thumbs(x.fs)+'<div><label class="check"><input type="checkbox" data-pubini="'+pid+'|'+i+'"'+(x.pub?' checked':'')+'>ظاهرة للطالبات</label>'+rmBtn("initiatives",pid,i)+'</div></li>'; }).join("")+'</ul>' : '<p class="hint">لا توجد مبادرات بعد.</p>')+
@@ -1829,6 +1838,10 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     else if(a.dataset.act === "evpub"){
       var evl = PROG.evidence[curPid] || [], ex = evl[+a.dataset.i];
       if(ex){ ex.pub = !ex.pub; saveStf(); savePub(); progDetail(); toast(ex.pub ? "سيظهر الشاهد للطالبات وأولياء الأمور" : "أُخفي الشاهد"); }
+    }
+    else if(a.dataset.act === "filevis"){
+      var ee = (PROG.evidence[curPid] || [])[+a.dataset.i], ff = ee && ee.fs && ee.fs[+a.dataset.j];
+      if(ff){ ff.h = !ff.h; saveStf(); savePub(); progDetail(); }
     }
     else if(a.dataset.act === "stab"){ stTab = a.dataset.t; progDetail(); }
     else if(a.dataset.act === "poster"){
