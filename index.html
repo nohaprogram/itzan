@@ -326,9 +326,17 @@ img{max-width:100%}
     <form class="form card" id="bcfgForm">
       <div id="bcDays" style="display:flex;flex-wrap:wrap;gap:10px"></div>
       <div style="display:flex;flex-wrap:wrap;gap:10px">
-        <label>من الساعة <input type="time" id="bcFrom" value="08:00"></label>
-        <label>إلى الساعة <input type="time" id="bcTo" value="12:00"></label>
-        <label>مدة الموعد <select id="bcStep"><option value="15">١٥ دقيقة</option><option value="20">٢٠ دقيقة</option><option value="30">٣٠ دقيقة</option><option value="45">٤٥ دقيقة</option><option value="60">ساعة</option></select></label>
+        <label>أولياء الأمور: من <input type="time" id="bcFrom" value="07:30"></label>
+        <label>إلى <input type="time" id="bcTo" value="08:30"></label>
+        <label>مدة الزيارة <select id="bcStep"><option value="10">١٠ دقائق</option><option value="15">١٥ دقيقة</option><option value="20">٢٠ دقيقة</option><option value="30">٣٠ دقيقة</option></select></label>
+      </div>
+      <h4 style="margin:6px 0">الطالبات (لقاء مع المرشدة)</h4>
+      <div style="display:flex;flex-wrap:wrap;gap:10px">
+        <label>من الساعة <input type="time" id="bcSFrom" value="09:30"></label>
+        <label>إلى الساعة <input type="time" id="bcSTo" value="10:30"></label>
+        <label>مدة اللقاء <select id="bcSStep"><option value="10">١٠ دقائق</option><option value="15">١٥ دقيقة</option><option value="20">٢٠ دقيقة</option><option value="30">٣٠ دقيقة</option></select></label>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:10px">
         <label>عدد الأيام المعروضة <input type="number" id="bcAhead" min="1" max="14" value="5" style="width:80px"></label>
       </div>
       <div><button class="btn" type="submit">حفظ ساعات الحجز</button></div>
@@ -944,7 +952,7 @@ img{max-width:100%}
   var meetDay = 0, meetSlot = null;
   function meetDraw(){
     $("#meetDays").innerHTML = dayList.map(function(d,i){ return '<button type="button" class="day" data-md="'+i+'" aria-pressed="'+(i===meetDay)+'">'+fmtDay.format(d)+'</button>'; }).join("");
-    $("#meetSlots").innerHTML = SLOTS.map(function(t){
+    $("#meetSlots").innerHTML = SLOTS_M.map(function(t){
       var bk = booked[meetDay+"|"+t];
       return '<button type="button" class="slot" data-ms="'+t+'" '+(bk?'disabled':'')+' aria-pressed="'+(meetSlot===t)+'">'+t+'</button>';
     }).join("");
@@ -1111,14 +1119,16 @@ img{max-width:100%}
   surveysDraw();
 
   /* ---------- booking ---------- */
-  var BCFG = {days:[0,1,2,3,4], from:"08:00", to:"12:00", step:30, ahead:5};
-  var SLOTS = [], dayList = [];
+  var BCFG = {days:[0,1,2,3,4], from:"07:30", to:"08:30", step:15, sFrom:"09:30", sTo:"10:30", sStep:15, ahead:5};
+  var SLOTS = [], SLOTS_M = [], dayList = [];
   var fmtDay = new Intl.DateTimeFormat("ar-SA-u-ca-gregory", {weekday:"long", day:"numeric", month:"long"});
   function hm(m){ var h = Math.floor(m/60), mi = m%60, ap = h < 12 ? "ص" : "م"; var h12 = h%12 === 0 ? 12 : h%12; return h12+":"+(mi<10?"0":"")+mi+" "+ap; }
   function tmin(t){ var a = String(t||"0:0").split(":"); return (+a[0])*60 + (+a[1]||0); }
   function applyBookCfg(){
     var c = BCFG, st = Math.max(10, +c.step || 30), a = tmin(c.from), b = tmin(c.to);
-    SLOTS = []; for(var m = a; m <= b; m += st) SLOTS.push(hm(m));
+    SLOTS = []; for(var m = a; m + st <= b; m += st) SLOTS.push(hm(m));
+    var sst = Math.max(10, +c.sStep || 15), sa = tmin(c.sFrom || "09:30"), sb = tmin(c.sTo || "10:30");
+    SLOTS_M = []; for(var m2 = sa; m2 + sst <= sb; m2 += sst) SLOTS_M.push(hm(m2));
     dayList = []; var d = new Date(), n = 0;
     while(dayList.length < Math.max(1, Math.min(14, +c.ahead || 5)) && n++ < 60){
       d = new Date(d.getTime() + 86400000);
@@ -1160,15 +1170,15 @@ img{max-width:100%}
   var DAYN = ["الأحد","الاثنين","الثلاثاء","الأربعاء","الخميس","الجمعة","السبت"];
   function bcfgFill(){
     $("#bcDays").innerHTML = DAYN.map(function(n,i){ return '<label style="display:flex;gap:4px;align-items:center"><input type="checkbox" data-bcd="'+i+'" '+(BCFG.days.indexOf(i)>-1?'checked':'')+'> '+n+'</label>'; }).join("");
-    $("#bcFrom").value = BCFG.from; $("#bcTo").value = BCFG.to; $("#bcStep").value = String(BCFG.step); $("#bcAhead").value = BCFG.ahead;
+    $("#bcFrom").value = BCFG.from; $("#bcTo").value = BCFG.to; $("#bcStep").value = String(BCFG.step); $("#bcAhead").value = BCFG.ahead; $("#bcSFrom").value = BCFG.sFrom; $("#bcSTo").value = BCFG.sTo; $("#bcSStep").value = String(BCFG.sStep);
   }
   bcfgFill();
   $("#bcfgForm").addEventListener("submit", function(e){
     e.preventDefault();
-    var c = {days:[], from:$("#bcFrom").value, to:$("#bcTo").value, step:+$("#bcStep").value, ahead:+$("#bcAhead").value || 5};
+    var c = {days:[], from:$("#bcFrom").value, to:$("#bcTo").value, step:+$("#bcStep").value, sFrom:$("#bcSFrom").value, sTo:$("#bcSTo").value, sStep:+$("#bcSStep").value, ahead:+$("#bcAhead").value || 5};
     $$("[data-bcd]").forEach(function(x){ if(x.checked) c.days.push(+x.dataset.bcd); });
     if(!c.days.length){ toast("اختاري يومًا واحدًا على الأقل"); return; }
-    if(tmin(c.to) < tmin(c.from)){ toast("وقت النهاية قبل البداية"); return; }
+    if(tmin(c.to) < tmin(c.from) || tmin(c.sTo) < tmin(c.sFrom)){ toast("وقت النهاية قبل البداية"); return; }
     BCFG = c; applyBookCfg(); booked = {}; bookDraw(); if(!$("#psyMeet").hidden) meetDraw();
     if(DB && isStaff) DB.doc("config/slots").set(c).then(function(){ toast("تم حفظ ساعات الحجز"); }, function(){ toast("تعذّر الحفظ"); });
     else toast("تم التطبيق (بدون حفظ)");
@@ -1912,18 +1922,18 @@ img{max-width:100%}
     var lastSlotKeys = {};
     function onSlotsRefresh(){
       booked = {};
-      dayList.forEach(function(d,di){ SLOTS.forEach(function(t){ if(lastSlotKeys[isoDay(d) + "|" + t]) booked[di + "|" + t] = true; }); });
+      dayList.forEach(function(d,di){ SLOTS.concat(SLOTS_M).forEach(function(t){ if(lastSlotKeys[isoDay(d) + "|" + t]) booked[di + "|" + t] = true; }); });
     }
     onColl("slots", function(sn){
       var keys = {}; flat(sn).forEach(function(k){ keys[k] = 1; }); lastSlotKeys = keys;
       booked = {};
-      dayList.forEach(function(d,di){ SLOTS.forEach(function(t){ if(keys[isoDay(d) + "|" + t]) booked[di + "|" + t] = true; }); });
+      dayList.forEach(function(d,di){ SLOTS.concat(SLOTS_M).forEach(function(t){ if(keys[isoDay(d) + "|" + t]) booked[di + "|" + t] = true; }); });
       bookDraw(); if(!$("#psyMeet").hidden) meetDraw();
     });
     onDoc("config/slots", function(sn){
       if(!sn.exists) return; var c = sn.data(); if(!c || !c.days) return;
       if(JSON.stringify(c) === JSON.stringify(BCFG)) return;
-      BCFG = c; applyBookCfg(); bcfgFill(); booked = {};
+      BCFG = Object.assign({}, BCFG, c); applyBookCfg(); bcfgFill(); booked = {};
       onSlotsRefresh && onSlotsRefresh(); bookDraw(); if(!$("#psyMeet").hidden) meetDraw();
     });
     onDoc("config/scales", function(sn){
