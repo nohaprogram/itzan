@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>قائمة المشكلات الطلابية — توجيه الطالبات</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&family=Baloo+Bhaijaan+2:wght@600;700&display=swap">
+<style>
+:root{--bg:#FDFBFF;--surface:#FFFFFF;--fg:#3B3552;--muted:#756E8E;--line:#EBE4F6;--brand:#7A66B8;--soft:#F0EBFB;--accent-soft:#FFE9E3;
+  --f-display:'Baloo Bhaijaan 2','Tajawal',system-ui,sans-serif;--f-body:'Tajawal',system-ui,sans-serif}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:16px;line-height:1.7;padding:0 16px 40px}
+h1,h2,h3{font-family:var(--f-display);line-height:1.4;margin:0}
+p{margin:0}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:3px solid #C9605A;outline-offset:2px}
+.wrap{max-width:680px;margin-inline:auto}
+.head{text-align:center;padding:26px 0 18px}
+.head small{display:block;color:var(--muted);font-size:14px}
+.head h1{font-size:26px;color:var(--brand);margin:4px 0 8px}
+.head p{color:var(--muted);font-size:15px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:24px;padding:18px;box-shadow:0 2px 14px rgba(122,102,184,.06)}
+.form{display:grid;gap:4px}
+.row{display:grid;grid-template-columns:2fr 1.3fr 1fr;gap:10px;margin-bottom:6px}
+label{font-weight:500;font-size:14px;display:grid;gap:4px}
+input[type=text],input[type=number],select{width:100%;border:1px solid var(--line);border-radius:14px;padding:9px 12px;background:var(--bg)}
+.radios{display:flex;gap:8px;flex-wrap:wrap}
+.radios label{display:flex;gap:6px;align-items:center;border:1px solid var(--line);border-radius:999px;padding:5px 16px;font-weight:400;cursor:pointer;background:var(--bg);font-size:15px}
+.radios label:has(input:checked){background:var(--soft);border-color:var(--brand);color:var(--brand);font-weight:500}
+.btn{border:0;border-radius:999px;padding:10px 22px;background:var(--brand);color:#fff;font-weight:700;cursor:pointer}
+.btn.ghost{background:var(--soft);color:var(--brand)}
+.btn.small{padding:7px 16px;font-size:14px}
+.btn:disabled{opacity:.6;cursor:wait}
+.hint{color:var(--muted);font-size:14px}
+.plprog{height:8px;background:var(--soft);border-radius:99px;overflow:hidden;margin:6px 0 14px}
+.plprog i{display:block;height:100%;background:var(--brand);transition:width .3s}
+.plq{padding:12px 0;border-bottom:1px solid var(--line)}
+.plq:last-child{border-bottom:0}
+.plt{font-size:15.5px;margin-bottom:8px;display:flex;gap:8px;align-items:flex-start}
+.pln{flex:none;min-width:28px;height:28px;border-radius:50%;background:var(--soft);color:var(--brand);display:grid;place-items:center;font-size:13px;font-weight:700}
+.plOther{margin-top:8px;max-width:280px}
+.plnav{display:flex;gap:10px;justify-content:space-between;margin-top:16px}
+.toast{position:fixed;inset-inline:16px;bottom:20px;margin-inline:auto;max-width:420px;background:var(--fg);color:#fff;border-radius:16px;padding:10px 16px;text-align:center;opacity:0;transform:translateY(20px);transition:.25s;pointer-events:none}
+.toast.show{opacity:1;transform:none}
+.off{background:var(--accent-soft);border-radius:16px;padding:10px 14px;font-size:14px;margin-bottom:12px}
+@media (max-width:560px){.row{grid-template-columns:1fr 1fr}.row label:first-child{grid-column:1/-1}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="head">
+    <small>مدارس الذكر للبنات · المرحلة الثانوية · توجيه الطالبات</small>
+    <h1>قائمة المشكلات الطلابية</h1>
+    <p>عزيزتي الطالبة، هذه القائمة تساعدنا على معرفة ما قد يواجهك من صعوبات لنقدّم لك البرامج والخدمات المناسبة. إجاباتك سرية، وكتابة الاسم اختيارية. أجيبي بصدق ودقة ولا تتسرعي.</p>
+  </header>
+  <div id="offNote" class="off" hidden>الاستبانة غير متصلة بقاعدة البيانات الآن، فلن تُحفظ الإجابات. أبلغي الموجهة الطلابية.</div>
+  <div id="plWrap">
+    <div class="card">
+      <div id="plStepT" style="font-weight:700"></div>
+      <div class="plprog"><i id="plBar"></i></div>
+      <div id="plBody" class="form"></div>
+      <div class="plnav"><button class="btn ghost" type="button" id="plPrev">› السابق</button><button class="btn" type="button" id="plNext">التالي ‹</button></div>
+    </div>
+  </div>
+  <div id="plDone" hidden>
+    <div class="card" style="text-align:center">
+      <h3>شكرًا لكِ 🌷</h3>
+      <p style="margin:8px 0 14px">وصلت إجاباتك إلى الموجهة الطلابية. إذا احتجتِ إلى الحديث معها فأبوابها مفتوحة لكِ دائمًا.</p>
+      <button class="btn ghost small" type="button" id="plAgain">تعبئة استبانة جديدة (لطالبة أخرى)</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script src="/config.js"></script>
+<script src="/backend.js"></script>
+<script>
+(function(){
+  "use strict";
+  function $(q){ return document.querySelector(q); }
+  function esc(s){ return String(s).replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+  function arNum(n){ return String(n).replace(/\d/g, function(d){ return "٠١٢٣٤٥٦٧٨٩"[+d]; }); }
+  function nid(){ return Date.now()*1000 + Math.floor(Math.random()*1000); }
+  var tt; function toast(m){ var t = $("#toast"); t.textContent = m; t.classList.add("show"); clearTimeout(tt); tt = setTimeout(function(){ t.classList.remove("show"); }, 3500); }
+  var fmtShort = new Intl.DateTimeFormat("ar-SA-u-ca-gregory", {day:"numeric", month:"long"});
+
+  /* الحفظ في قاعدة بيانات موقع «اتزان» نفسها، فتظهر النتائج في لوحة المرشدة مباشرة */
+  var DB = null, myId = null, ready = (async function(){
+    try{
+      var u = await claude.use("user"); DB = await claude.use("db");
+      if(u) myId = await u.id();
+    }catch(e){ DB = null; }
+    if(!DB || !myId) $("#offNote").hidden = false;
+  })();
+  async function save(rec){
+    await ready;
+    if(!DB || !myId) throw new Error("offline");
+    var ref = DB.doc("scaleResults/" + myId), cur = await ref.get();
+    var items = (cur.exists && cur.data() && cur.data().items) ? cur.data().items.slice() : [];
+    items.push(rec);
+    await ref.set({items:items});
+  }
+
+  var PL_DOM = [
+    {k:"sch", t:"المشكلات المدرسية", from:1, items:[
+      ["أعرف طرق الاستذكار الجيد",1],["أجد صعوبة في توفر وسيلة مواصلات للحضور للمدرسة",0],["أتردد في المشاركة خوفًا أن تكون إجابتي خاطئة",0],
+      ["من السهل الحديث مع المعلمة عندما أحتاج إلى ذلك",1],["أشعر بالملل أثناء شرح بعض المعلمات",0],["لدي فرصة كافية للنقاش والحوار أثناء الدرس",1],
+      ["أكره الذهاب إلى المدرسة خوفًا من بعض المعلمات",0],["معلمتي تبدي اهتمامها بي",1],["تستطيع المعلمات إيصال المادة العلمية بشكل سليم",1],
+      ["تكلفني المعلمات بالكثير من الواجبات المدرسية",0],["تعاملني المعلمات معاملة حسنة دون تمييز",1],["تتلفظ بعض المعلمات بألفاظ غير لائقة",0],
+      ["تضبط المعلمات الفصل",1],["تتأخر بعض المعلمات في الحضور للفصل",0],["تستخدم المعلمات تقنيات تعليم أو وسائل إيضاح في الفصل",1],
+      ["تشاغب بعض زميلاتي أثناء الدرس",0],["تكثر المشاجرات في المدرسة بين الطالبات",0],["تهتم المعلمات بمشكلات الطالبات",1],
+      ["تفتقدني المعلمات عند غيابي",1],["تفتقدني زميلاتي عند غيابي",1],["تحرص المعلمات على توجيهي",1],
+      ["ألجأ إلى الموجهة الطلابية لمساعدتي عند الحاجة",1],["أحصل على الاستشارة المناسبة من خلال الهاتف الإرشادي عند الحاجة",1],["تتاح لي الفرصة للمشاركة في أنشطة المدرسة",1],
+      ["الاصطفاف الصباحي ممل",0],["أتغيب عن المدرسة لعدم رغبتي في الدراسة",0],["أتغيب عن مدرستي لأنني لا أشعر بالأمان فيها",0],
+      ["أحافظ على ممتلكات ومرافق المدرسة",1],["أفكر في ترك المدرسة لأساعد أسرتي",0],["تكافئني معلمتي عند إنجاز المهام المكلفة بها",1],
+      ["أشعر أن ممرات ومرافق المدرسة آمنة",1],["تساعدني الواجبات المدرسية في زيادة تحصيلي الدراسي",1],["ممارستي للألعاب الإلكترونية تؤثر على مستواي الدراسي",0],
+      ["أشعر بعدم الرغبة في التعلم",0],["تحفزني المعلمات عند أداء مهامي المدرسية",1]]},
+    {k:"psy", t:"المشكلات النفسية", from:36, items:[
+      ["أشعر بالكراهية لنفسي",0],["خجلي يؤثر سلبًا على قراراتي",0],["أستطيع تحديد مشاعري وفهمها",1],["أكرر أخطائي بشكل مستمر",0],
+      ["أعاني من كثرة النسيان",0],["أخاف من أشياء يعتبرها الآخرون غير مخيفة",0],["لدي ردة فعل مبالغ فيها تجاه الآخرين",0],
+      ["أشعر بالخوف في الأماكن المغلقة",0],["أشعر بالضيق لكثرة طالبات المدرسة",0],["أشعر بالسعادة أثناء وجودي في مدرستي",1],
+      ["يزعجني التفكير في المستقبل",0],["أستطيع إلقاء كلمة أمام الطابور الصباحي",1],["أواجه صعوبة في أسلوب الرفض وقول (لا) في أمر لا أرغبه",0],
+      ["أعاني من عدم القدرة على إبداء الرأي",0],["لدي معرفة بوسائل التبليغ عند تعرضي للعنف أو الإيذاء",1]]},
+    {k:"car", t:"المشكلات المهنية", from:51, items:[
+      ["أحتاج إلى تنمية مواهبي وقدراتي",0],["لدي إلمام بمتطلبات المهن المختلفة",1],["لدي إلمام بالتخصصات المتاحة بعد الثانوية",1],
+      ["مشاركتي في الأنشطة المدرسية تساعدني في اكتشاف مستقبلي المهني",1],["تساعدني الموجهة الطلابية في اختيار التخصص المناسب",1],
+      ["تستخدم المدرسة المنشورات في توعية الطالبات لاختيار التخصص في المرحلة الجامعية",1],["لدي معرفة بالمسارات التعليمية المناسبة لميولي وقدراتي",1],
+      ["أعتقد أن الأعمال الحرفية ليس لها أهمية كبيرة للمجتمع",0]]},
+    {k:"soc", t:"المشكلات الاجتماعية", from:59, items:[
+      ["أجد صعوبة في تكوين صداقات",0],["أتشاجر كثيرًا مع الآخرين",0],["مصروفي اليومي غير كافٍ",0],["أسهر إلى وقت متأخر من الليل",0],
+      ["أقضي وقتًا طويلًا على مواقع التواصل الاجتماعي",0],["تضايقني مشاركة والديّ في اختياري لصديقاتي",0],["أتعرض لبعض التحرشات الجنسية",0],
+      ["يوجد شخص أو أشخاص يعملون على استهدافي مما يسبب لي الإيذاء",0],["تقوم بعض الطالبات بإتلاف بعض ممتلكاتي",0],["يوجد من يؤثر على تفكيري بشكل خاطئ",0],
+      ["أتعرض لاختراقات إلكترونية لأجهزتي",0],["تنشر بعض الطالبات الإشاعات الكاذبة عن الأخريات في المدرسة أو على الإنترنت",0],
+      ["أشعر بأن لدي قبولًا في مجتمعي المدرسي",1],["أعرف كيف أتعامل مع حالات الطوارئ أو الكوارث الطبيعية",1],
+      ["تهتم الطالبات الأكبر سنًا في المدرسة بالطالبات الأصغر سنًا",1],["أتمتع بعلاقة قوية مع أهلي",1],["أتمتع بعلاقة قوية مع زميلاتي",1],
+      ["أواجه صعوبة في الحديث مع الآخرين",0]]},
+    {k:"fam", t:"المشكلات الأسرية", from:77, items:[
+      ["كثرة التزاماتي المدرسية تعيق استذكاري لدروسي",0],["ينتقدني ولي أمري أمام الآخرين",0],["يأخذ أفراد أسرتي رأيي في أمور الأسرة",1],
+      ["يتغيب أحد والديّ عن المنزل كثيرًا",0],["تكثر المشاجرات بين أفراد أسرتي",0],["يقل الحوار الفعال بين أفراد أسرتي",0],
+      ["تشجعني عائلتي على الاهتمام والتفوق الدراسي",1],["استخدامي لمواقع التواصل الاجتماعي يؤثر على علاقتي مع أسرتي",0]]}
+  ];
+  var PL_ITEMS = []; PL_DOM.forEach(function(d, di){ d.items.forEach(function(x, i){ PL_ITEMS.push({no:d.from + i, t:x[0], pos:!!x[1], dom:di}); }); });
+  var PL_ANS = ["نعم","لا","أحيانًا"];             // القيم المحفوظة: 1 نعم، 2 لا، 3 أحيانًا
+  var PL_CRIT = [7,27,29,36,46,65,66];             // عبارات تستدعي متابعة فردية عاجلة
+  var EDU = ["غير متعلم","يقرأ ويكتب","ابتدائي","متوسط","ثانوي","دبلوم عالي","جامعي","دراسات عليا ( ماجستير أو دكتوراه )"];
+  var JOB = ["مدني","عسكري","قطاع خاص","غير ذلك"];
+  var PL_INFO = [
+    {k:"house", t:"نوع المنزل الذي تسكنينه", o:["فيلا","دور","شقة","شعبي","مسلح","آخر"], other:"آخر"},
+    {k:"own", t:"نوع ملكية المنزل", o:["ملك","مستأجر"]},
+    {k:"fa", t:"هل الأب على قيد الحياة؟", o:["نعم","لا"]},
+    {k:"mo", t:"هل الأم على قيد الحياة؟", o:["نعم","لا"]},
+    {k:"live", t:"مع من تعيشين؟", o:["أمي","أبي","الأبوين معًا","آخرين"], other:"آخرين"},
+    {k:"sep", t:"هل الوالدان منفصلان؟", o:["نعم","لا"]},
+    {k:"grd", t:"تقديري في العام الماضي", o:["ممتاز مرتفع","ممتاز","جيد جدًا مرتفع","جيد جدًا","جيد مرتفع","جيد","مقبول مرتفع","مقبول","ضعيف","راسب","محروم"]}
+  ];
+  var PL_GR = {"1":"أول ثانوي","2":"ثاني ثانوي","3":"ثالث ثانوي"};
+  var plStep = 0, plA = {}, plInfo = {};
+  var PL_STEPS = [{t:"معلوماتي العامة"}].concat(PL_DOM.map(function(d){ return {t:d.t, dom:d}; }));
+
+  function isProb(it, v){ return it.pos ? v === 2 : v === 1; }     // الإجابة الدالة على وجود المشكلة
+  function plRadios(name, opts, cur){
+    return '<div class="radios">'+opts.map(function(o, i){
+      var val = typeof o === "string" ? o : o[1], lab = typeof o === "string" ? o : o[0];
+      return '<label><input type="radio" name="'+name+'" value="'+esc(val)+'"'+(String(cur) === String(val) ? ' checked' : '')+'>'+esc(lab)+'</label>';
+    }).join("")+'</div>';
+  }
+  function plDraw(){
+    var s = PL_STEPS[plStep], h = "";
+    $("#plBar").style.width = Math.round(plStep / PL_STEPS.length * 100) + "%";
+    $("#plStepT").textContent = "الجزء " + arNum(plStep + 1) + " من " + arNum(PL_STEPS.length) + ": " + s.t;
+    if(plStep === 0){
+      h += '<div class="row"><label for="plName">الاسم (اختياري)<input type="text" id="plName" autocomplete="off" value="'+esc(plInfo.n || "")+'" placeholder="يمكنك تركه فارغًا"></label>'+
+           '<label for="plGr">الصف<select id="plGr"><option value="">اختاري الصف</option>'+Object.keys(PL_GR).map(function(g){ return '<option value="'+g+'"'+(plInfo.g === g ? ' selected' : '')+'>'+PL_GR[g]+'</option>'; }).join("")+'</select></label>'+
+           '<label for="plAge">العمر<input type="number" id="plAge" min="12" max="22" value="'+esc(plInfo.age || "")+'" style="width:100%"></label></div>';
+      PL_INFO.forEach(function(q, i){
+        var cur = plInfo[q.k] || "";
+        h += '<div class="plq"><div class="plt"><span class="pln">'+arNum(i + 1)+'</span>'+esc(q.t)+'</div>'+plRadios("pi_"+q.k, q.o, cur)+
+          (q.other ? '<input type="text" class="plOther" data-k="'+q.k+'" placeholder="'+esc(q.otherL || "اذكريها")+'" value="'+esc(plInfo[q.k + "_x"] || "")+'"'+(cur === q.other ? '' : ' hidden')+'>' : '')+'</div>';
+      });
+    } else {
+      h += '<p class="hint" style="margin-bottom:8px">اقرئي كل عبارة واختاري: <b>نعم</b> إذا كانت تنطبق عليكِ، <b>لا</b> إذا لم تنطبق، <b>أحيانًا</b> إذا كانت تنطبق في بعض الأوقات.</p>';
+      s.dom.items.forEach(function(x, i){
+        var no = s.dom.from + i;
+        h += '<div class="plq" id="plq'+no+'"><div class="plt"><span class="pln">'+arNum(no)+'</span>'+esc(x[0])+'</div>'+
+          plRadios("pa_"+no, [["نعم",1],["لا",2],["أحيانًا",3]], plA[no] || "")+'</div>';
+      });
+    }
+    $("#plBody").innerHTML = h;
+    $("#plPrev").hidden = plStep === 0;
+    $("#plNext").textContent = plStep === PL_STEPS.length - 1 ? "إرسال الاستبانة" : "التالي ‹";
+  }
+  function plCollect(){
+    if(plStep === 0){
+      plInfo.n = $("#plName").value.trim(); plInfo.g = $("#plGr").value; plInfo.age = $("#plAge").value;
+      PL_INFO.forEach(function(q){
+        var c = $('input[name="pi_'+q.k+'"]:checked'); plInfo[q.k] = c ? c.value : "";
+        var o = $('.plOther[data-k="'+q.k+'"]'); if(o) plInfo[q.k + "_x"] = o.hidden ? "" : o.value.trim();
+      });
+    } else {
+      PL_STEPS[plStep].dom.items.forEach(function(x, i){ var no = PL_STEPS[plStep].dom.from + i, c = $('input[name="pa_'+no+'"]:checked'); if(c) plA[no] = +c.value; });
+    }
+  }
+  function plMissing(){
+    if(plStep === 0){
+      if(!plInfo.g) return "#plGr";
+      for(var i = 0; i < PL_INFO.length; i++) if(!plInfo[PL_INFO[i].k]) return '[name="pi_'+PL_INFO[i].k+'"]';
+      return null;
+    }
+    var d = PL_STEPS[plStep].dom;
+    for(var j = 0; j < d.items.length; j++) if(!plA[d.from + j]) return "#plq" + (d.from + j);
+    return null;
+  }
+  $("#plBody").addEventListener("change", function(e){
+    var r = e.target; if(!r.name || r.name.indexOf("pi_") !== 0) return;
+    var k = r.name.slice(3), q = PL_INFO.filter(function(x){ return x.k === k; })[0], o = $('.plOther[data-k="'+k+'"]');
+    if(o && q) o.hidden = r.value !== q.other;
+  });
+  $("#plPrev").addEventListener("click", function(){ plCollect(); if(plStep > 0){ plStep--; plDraw(); window.scrollTo(0, 0); } });
+  $("#plNext").addEventListener("click", function(){
+    plCollect();
+    var m = plMissing();
+    if(m){ toast(plStep === 0 ? "أكملي الصف وجميع الأسئلة" : "أجيبي عن جميع العبارات"); var el = $(m); if(el) el.scrollIntoView({block:"center"}); return; }
+    if(plStep < PL_STEPS.length - 1){ plStep++; plDraw(); window.scrollTo(0, 0); return; }
+    var a = ""; PL_ITEMS.forEach(function(it){ a += plA[it.no] || 0; });
+    var info = {}; PL_INFO.forEach(function(q){ info[q.k] = plInfo[q.k]; if(plInfo[q.k + "_x"]) info[q.k + "_x"] = plInfo[q.k + "_x"]; });
+    var rec = {id:nid(), k:"pl", n:plInfo.n || "", g:plInfo.g, age:plInfo.age || "", info:info, a:a, d:fmtShort.format(new Date()), ts:Date.now()};
+    var btn = $("#plNext"); btn.disabled = true; btn.textContent = "جارٍ الإرسال…";
+    save(rec).then(function(){
+      plA = {}; plInfo = {}; plStep = 0;
+      $("#plWrap").hidden = true; $("#plDone").hidden = false; window.scrollTo(0, 0);
+    }, function(){
+      toast("تعذّر الإرسال. تأكدي من اتصال الإنترنت ثم اضغطي «إرسال» مرة أخرى.");
+    }).then(function(){ btn.disabled = false; if(!$("#plWrap").hidden) btn.textContent = "إرسال الاستبانة"; });
+  });
+  $("#plAgain").addEventListener("click", function(){ $("#plWrap").hidden = false; $("#plDone").hidden = true; plDraw(); });
+  plDraw();
+})();
+</script>
+</body>
+</html>

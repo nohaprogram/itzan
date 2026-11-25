@@ -1368,7 +1368,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     var box = $("#plReport"); if(!box) return;
     var rows = plRows(), n = rows.length, st = itemStats(rows);
     $$("#plGrTabs .tab").forEach(function(t){ t.setAttribute("aria-pressed", t.dataset.g === plGrade); });
-    if(!n){ box.innerHTML = '<p class="empty">لا توجد استجابات '+(plGrade ? 'لطالبات ' + PL_GR[plGrade] + ' ' : '')+'بعد. شاركي الطالبات رابط الاستبانة: <b dir="ltr">'+esc(location.origin)+'/#plist</b></p>'; return; }
+    if(!n){ box.innerHTML = '<p class="empty">لا توجد استجابات '+(plGrade ? 'لطالبات ' + PL_GR[plGrade] + ' ' : '')+'بعد. شاركي الطالبات رابط الاستبانة: <b dir="ltr">'+esc(location.origin)+'/q</b></p>'; return; }
     var byG = {"1":0,"2":0,"3":0}; PL.forEach(function(r){ if(byG[r.g] !== undefined) byG[r.g]++; });
     var crit = rows.filter(function(r){ return PL_CRIT.some(function(no){ var it = PL_ITEMS[no - 1], v = +(r.a || "").charAt(no - 1); return isProb(it, v) || v === 3; }); });
     var dom = PL_DOM.map(function(d, di){ var s = st.filter(function(x){ return x.it.dom === di; }); var avg = s.reduce(function(a, x){ return a + x.sc; }, 0) / s.length; return {t:d.t, avg:Math.round(avg * 10) / 10, s:s}; });
@@ -1464,7 +1464,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
   });
   $("#plGrTabs").addEventListener("click", function(e){ var b = e.target.closest("[data-g]"); if(!b) return; plGrade = b.dataset.g; plStats(); });
   $("#plCopy").addEventListener("click", function(){
-    var u = location.origin + location.pathname.replace(/\/admin\/?$/, "/") + "#plist";
+    var u = location.origin + "/q";
     (navigator.clipboard ? navigator.clipboard.writeText(u) : Promise.reject()).then(function(){ toast("تم نسخ رابط الاستبانة"); }, function(){ prompt("انسخي الرابط:", u); });
   });
   plStats();
