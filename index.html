@@ -41,7 +41,7 @@ button,input,select,textarea{font:inherit;color:inherit}
   margin-inline:calc(-1 * max(16px,env(safe-area-inset-left,0px)));padding-inline:max(16px,env(safe-area-inset-left,0px))}
 .top .wrap{display:flex;align-items:center;gap:16px;padding-block:10px}
 .logo{font-family:var(--f-display);font-weight:700;font-size:17px;white-space:nowrap;color:var(--brand);text-decoration:none}
-.logo small{display:block;font-family:var(--f-body);font-weight:400;font-size:12px;color:var(--muted)}
+.logo{display:flex;align-items:center;gap:10px}.logo img{width:42px;height:42px;object-fit:contain;flex:none}.logo span{display:block;line-height:1.25}.logo small{display:block;font-family:var(--f-body);font-weight:400;font-size:12px;color:var(--muted)}
 nav{display:flex;gap:4px;overflow-x:auto;min-width:0;scrollbar-width:thin}
 nav a{white-space:nowrap;text-decoration:none;color:var(--fg);padding:6px 14px;border-radius:999px;font-size:15px}
 nav a:hover{background:var(--soft)}
@@ -226,7 +226,7 @@ details.addbox form{background:transparent;padding:6px 0 0;margin:0}
 .toast span{background:var(--fg);color:var(--bg);padding:10px 18px;border-radius:10px;font-size:15px;opacity:0;transition:opacity .2s}
 .toast.show span{opacity:1}
 footer{border-top:1px solid var(--line);padding-block:18px;color:var(--muted);font-size:13px}
-@media (max-width:760px){.hero,.split{grid-template-columns:1fr}.logo small{display:none}}
+@media (max-width:760px){.hero,.split{grid-template-columns:1fr}.logo small{font-size:11px}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 
 /* أساسيات الصفحة */
@@ -291,7 +291,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
 
 <header class="top">
   <div class="wrap">
-    <a class="logo" href="#home">اتزان<small>الإرشاد الطلابي · مدارس الذكر</small></a>
+    <a class="logo" href="#home"><img src="/logo.png" alt="شعار مدارس الذكر"><span>مدارس الذكر<small>اتزان · الإرشاد الطلابي</small></span></a>
     <nav id="nav" aria-label="أقسام الموقع">
       <a href="#home">الرئيسية</a>
       <a href="#services">خدماتنا</a>
