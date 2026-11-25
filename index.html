@@ -2149,7 +2149,8 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
   };
   function icoSvg(k){ return '<svg viewBox="0 0 24 24" aria-hidden="true">'+(ICONS[k] || ICONS.star)[1]+'</svg>'; }
   var PAL = [["#FAD1E0","#a23a66"],["#CDEBDD","#2d7a58"],["#DAD0F5","#5b46a6"],["#FFDDBD","#a35a1c"],["#C6E3F7","#2a6da0"],["#F4ED96","#6b5d00"],["#F6C9C9","#a03d3d"],["#D3EBA9","#587a1a"]];
-  function pst(i){ var c = PAL[i % PAL.length]; return ' style="--f:'+c[0]+';--k:'+c[1]+'"'; }
+  var PAL_ONE = true;
+  function pst(i){ var c = PAL_ONE ? ["#CABED8","#4b3a6e"] : PAL[i % PAL.length]; return ' style="--f:'+c[0]+';--k:'+c[1]+'"'; }
   function evCats(){ return HST.map(function(x){ return x.l; }); }
   function hstCalc(){
     var dc = 0; Object.keys(PROG.evidence).forEach(function(pid){ PROG.evidence[pid].forEach(function(e){ if(!e.nc) dc++; }); }); if(isStaff){ HSTTOT = dc; HPROGS = Object.keys(PIDS).map(function(pid){ var n = (PROG.evidence[pid] || []).filter(function(e){ return !e.nc; }).length; return {p:PIDS[pid].t, n:n}; }).filter(function(x){ return x.n > 0; }); }
