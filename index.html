@@ -249,6 +249,36 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
 .hstats.prg .hst b{font-size:32px}
 .hsrow{display:grid;grid-template-columns:80px 1fr 2fr 110px auto;gap:8px;margin-bottom:8px}
 @media(max-width:600px){.hsrow{grid-template-columns:1fr 1fr}}
+
+/* قائمة المشكلات */
+.plprog{height:8px;background:var(--soft);border-radius:99px;overflow:hidden;margin:6px 0 14px}
+.plprog i{display:block;height:100%;background:var(--brand);transition:width .3s}
+.plq{padding:12px 0;border-bottom:1px solid var(--line)}
+.plq:last-child{border-bottom:0}
+.plt{font-size:15.5px;margin-bottom:8px;display:flex;gap:8px;align-items:flex-start}
+.pln{flex:none;min-width:28px;height:28px;border-radius:50%;background:var(--soft);color:var(--brand);display:grid;place-items:center;font-size:13px;font-weight:700}
+.plq .radios label:has(input:checked){background:var(--soft);border-color:var(--brand);color:var(--brand);font-weight:500}
+.plOther{margin-top:8px;max-width:280px}
+.plnav{display:flex;gap:10px;justify-content:space-between;margin-top:16px}
+.plbar{height:10px;background:var(--line);border-radius:99px;overflow:hidden;min-width:60px}
+.plbar i{display:block;height:100%;border-radius:99px}
+.plbar i.bad{background:var(--bad)}.plbar i.warn{background:#E0A93B}.plbar i.good{background:var(--good)}.plbar i.brand{background:var(--brand)}
+.pltab{width:100%;border-collapse:collapse;font-size:14px}
+.pltab th,.pltab td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:start;vertical-align:middle}
+.pltab th{color:var(--muted);font-weight:500}
+.pltab small{color:var(--muted)}
+.plinfo{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.plinfo h4{margin:0 0 8px;font-size:15px}
+.plrow{display:grid;grid-template-columns:1fr auto;gap:2px 8px;font-size:13.5px;margin-bottom:6px}
+.plrow .plbar{grid-column:1/-1;height:7px}
+.pldet{margin-bottom:10px}
+@media print{
+  body.plprint *{visibility:hidden}
+  body.plprint #plPrintArea,body.plprint #plPrintArea *{visibility:visible}
+  body.plprint #plPrintArea{position:absolute;inset:0 0 auto 0}
+  body.plprint .noprint{display:none!important}
+  body.plprint .plbar i{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
 </style>
 </head>
 <body>
@@ -336,6 +366,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     <button class="tab" type="button" data-d="inbox" aria-pressed="true">الوارد</button>
     <button class="tab" type="button" data-d="book" aria-pressed="false">الحجوزات</button>
     <button class="tab" type="button" data-d="scale" aria-pressed="false">نتائج المقاييس</button>
+    <button class="tab" type="button" data-d="plist" aria-pressed="false">قائمة المشكلات</button>
     <button class="tab" type="button" data-d="parts" aria-pressed="false">طلبات المشاركة</button>
     <button class="tab" type="button" data-d="fup" aria-pressed="false">نماذج المتابعة</button>
     <button class="tab" type="button" data-d="surv" aria-pressed="false">الاستبانات</button>
@@ -395,6 +426,24 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     <p style="font-size:13px;color:var(--muted)">خيارات الإجابة ثابتة: أبدًا، أحيانًا، غالبًا، دائمًا. يُحدَّد المستوى (منخفض، متوسط، مرتفع) بنسبة الدرجة من المجموع.</p>
     <div><button class="btn" type="submit">حفظ المقياس</button></div>
   </form>
+  </div>
+  <div id="d-plist" hidden>
+    <div id="plPrintArea">
+      <h3 class="section-title" style="margin-top:0">إحصائيات قائمة المشكلات الطلابية ١٤٤٥هـ</h3>
+      <div class="actions noprint" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px">
+        <button class="btn small" type="button" id="plCopy">نسخ رابط الاستبانة للطالبات</button>
+        <button class="btn small ghost" type="button" id="plCsvStats">تنزيل التفريغ (Excel)</button>
+        <button class="btn small ghost" type="button" id="plCsvAll">تنزيل جميع الاستجابات (Excel)</button>
+        <button class="btn small ghost" type="button" id="plPrint">طباعة التقرير / PDF</button>
+      </div>
+      <div class="tabs noprint" id="plGrTabs" role="group" aria-label="الصف">
+        <button class="tab" type="button" data-g="" aria-pressed="true">جميع الصفوف</button>
+        <button class="tab" type="button" data-g="1" aria-pressed="false">أول ثانوي</button>
+        <button class="tab" type="button" data-g="2" aria-pressed="false">ثاني ثانوي</button>
+        <button class="tab" type="button" data-g="3" aria-pressed="false">ثالث ثانوي</button>
+      </div>
+      <div id="plReport"></div>
+    </div>
   </div>
   <div id="d-parts" hidden>
     <h3 class="section-title" style="margin-top:0">طلبات المشاركة في البرامج</h3>
@@ -608,6 +657,28 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
 
 </section>
 
+<section class="view" id="v-plist" hidden>
+  <div class="eyebrow">استبانة الطالبات</div>
+  <h2>قائمة المشكلات الطلابية</h2>
+  <p class="lead">عزيزتي الطالبة، هذه القائمة تساعدنا على معرفة ما قد يواجهك من صعوبات لنقدّم لك البرامج والخدمات المناسبة. إجاباتك سرية، وكتابة الاسم اختيارية. أجيبي بصدق ودقة ولا تتسرعي.</p>
+  <div class="narrow" id="plWrap">
+    <div class="card">
+      <div id="plStepT" style="font-weight:700"></div>
+      <div class="plprog"><i id="plBar"></i></div>
+      <div id="plBody" class="form"></div>
+      <div class="plnav"><button class="btn ghost" type="button" id="plPrev">› السابق</button><button class="btn" type="button" id="plNext">التالي ‹</button></div>
+    </div>
+  </div>
+  <div class="narrow" id="plDone" hidden>
+    <div class="card" style="text-align:center">
+      <h3>شكرًا لكِ 🌷</h3>
+      <p style="margin:8px 0 14px">وصلت إجاباتك إلى الموجهة الطلابية. إذا احتجتِ إلى الحديث معها فأبوابها مفتوحة لكِ دائمًا.</p>
+      <button class="btn ghost small" type="button" id="plAgain">تعبئة استبانة جديدة (لطالبة أخرى)</button>
+      <button class="btn small" type="button" data-go="surveys|استشارة">طلب استشارة</button>
+    </div>
+  </div>
+</section>
+
 <!-- نماذج المعلمات -->
 <section class="view" id="v-tforms" hidden>
   <div class="eyebrow">للمعلمات</div>
@@ -701,14 +772,14 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
   function nid(){ return Date.now()*1000 + Math.floor(Math.random()*1000); }
 
   /* ---------- routing ---------- */
-  var views = ["home","services","programs","lists","games","surveys","scales","tforms","booking","staff","login"];
+  var views = ["home","services","programs","lists","games","surveys","scales","plist","tforms","booking","staff","login"];
   function route(){
     var h = (location.hash || "#home").slice(1);
     if(views.indexOf(h) < 0) h = "home";
     if(!isStaff && ["lists","tforms","staff"].indexOf(h) >= 0) h = "home";
     if(isStaff && !isCounselor && h === "staff") h = "tforms";
     views.forEach(function(v){ $("#v-"+v).hidden = (v !== h); });
-    var navKey = {lists:"staff", tforms:"staff", surveys:"services", booking:"services", scales:"services"}[h] || h;
+    var navKey = {lists:"staff", tforms:"staff", surveys:"services", booking:"services", scales:"services", plist:"services"}[h] || h;
     $$("#nav a").forEach(function(a){
       if(a.getAttribute("href") === "#"+navKey) a.setAttribute("aria-current","page"); else a.removeAttribute("aria-current");
     });
@@ -745,7 +816,8 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     {go:"surveys", kind:"شكوى", t:"شكوى أو اقتراح", d:"أخبرينا بما يضايقك أو بفكرة تطوّر المدرسة، وسنتابعه معك."},
     {go:"surveys", kind:"استشارة", t:"استشارة", d:"نفسية وأكاديمية واجتماعية ومهنية مع الموجّهة الطلابية، بخصوصية تامة."},
     {go:"booking", t:"حجز موعد", d:"لولي الأمر: اختاري يومًا ووقتًا لمقابلة المرشدة."},
-    {go:"scales", t:"اختبار ذاتي", d:"مقاييس قصيرة تفهمين بها نفسك، وتصل نتيجتها إلى المرشدة."}
+    {go:"scales", t:"اختبار ذاتي", d:"مقاييس قصيرة تفهمين بها نفسك، وتصل نتيجتها إلى المرشدة."},
+    {go:"plist", t:"قائمة المشكلات الطلابية", d:"استبانة قصيرة عن حياتك المدرسية والنفسية والمهنية والاجتماعية والأسرية، بسرية تامة."}
   ];
   $("#svcGrid").innerHTML = SERVICES.map(function(x, i){
     return '<button type="button" class="svc t'+((i % 4) + 1)+'" data-go="'+x.go+(x.kind?'|'+esc(x.kind):'')+'"><h3>'+esc(x.t)+'</h3><p>'+esc(x.d)+'</p><span class="go">ابدئي الآن ‹</span></button>';
@@ -774,7 +846,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     var v = $("#v-"+id), a = document.createElement("a");
     a.className = "back"; a.href = "#staff"; a.textContent = "‹ لوحة المرشدة"; v.insertBefore(a, v.firstChild);
   });
-  ["surveys","booking","scales"].forEach(function(id){
+  ["surveys","booking","scales","plist"].forEach(function(id){
     var v = $("#v-"+id), a = document.createElement("a");
     a.className = "back"; a.href = "#services"; a.textContent = "‹ خدماتنا"; v.insertBefore(a, v.firstChild);
   });
@@ -1120,6 +1192,256 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     scalesDraw(); $("#scPick").value = String(id); $("#scResult").innerHTML = ""; scItemsDraw(); toast("تم حفظ المقياس");
   });
   scalesDraw();
+
+  /* ---------- قائمة المشكلات الطلابية (وزارة التعليم ١٤٤٥هـ) ---------- */
+  // كل عبارة: [النص، 1 إذا كانت إيجابية (المشكلة عند الإجابة «لا»)]
+  var PL_DOM = [
+    {k:"sch", t:"المشكلات المدرسية", from:1, items:[
+      ["أعرف طرق الاستذكار الجيد",1],["أجد صعوبة في توفر وسيلة مواصلات للحضور للمدرسة",0],["أتردد في المشاركة خوفًا أن تكون إجابتي خاطئة",0],
+      ["من السهل الحديث مع المعلمة عندما أحتاج إلى ذلك",1],["أشعر بالملل أثناء شرح بعض المعلمات",0],["لدي فرصة كافية للنقاش والحوار أثناء الدرس",1],
+      ["أكره الذهاب إلى المدرسة خوفًا من بعض المعلمات",0],["معلمتي تبدي اهتمامها بي",1],["تستطيع المعلمات إيصال المادة العلمية بشكل سليم",1],
+      ["تكلفني المعلمات بالكثير من الواجبات المدرسية",0],["تعاملني المعلمات معاملة حسنة دون تمييز",1],["تتلفظ بعض المعلمات بألفاظ غير لائقة",0],
+      ["تضبط المعلمات الفصل",1],["تتأخر بعض المعلمات في الحضور للفصل",0],["تستخدم المعلمات تقنيات تعليم أو وسائل إيضاح في الفصل",1],
+      ["تشاغب بعض زميلاتي أثناء الدرس",0],["تكثر المشاجرات في المدرسة بين الطالبات",0],["تهتم المعلمات بمشكلات الطالبات",1],
+      ["تفتقدني المعلمات عند غيابي",1],["تفتقدني زميلاتي عند غيابي",1],["تحرص المعلمات على توجيهي",1],
+      ["ألجأ إلى الموجهة الطلابية لمساعدتي عند الحاجة",1],["أحصل على الاستشارة المناسبة من خلال الهاتف الإرشادي عند الحاجة",1],["تتاح لي الفرصة للمشاركة في أنشطة المدرسة",1],
+      ["الاصطفاف الصباحي ممل",0],["أتغيب عن المدرسة لعدم رغبتي في الدراسة",0],["أتغيب عن مدرستي لأنني لا أشعر بالأمان فيها",0],
+      ["أحافظ على ممتلكات ومرافق المدرسة",1],["أفكر في ترك المدرسة لأساعد أسرتي",0],["تكافئني معلمتي عند إنجاز المهام المكلفة بها",1],
+      ["أشعر أن ممرات ومرافق المدرسة آمنة",1],["تساعدني الواجبات المدرسية في زيادة تحصيلي الدراسي",1],["ممارستي للألعاب الإلكترونية تؤثر على مستواي الدراسي",0],
+      ["أشعر بعدم الرغبة في التعلم",0],["تحفزني المعلمات عند أداء مهامي المدرسية",1]]},
+    {k:"psy", t:"المشكلات النفسية", from:36, items:[
+      ["أشعر بالكراهية لنفسي",0],["خجلي يؤثر سلبًا على قراراتي",0],["أستطيع تحديد مشاعري وفهمها",1],["أكرر أخطائي بشكل مستمر",0],
+      ["أعاني من كثرة النسيان",0],["أخاف من أشياء يعتبرها الآخرون غير مخيفة",0],["لدي ردة فعل مبالغ فيها تجاه الآخرين",0],
+      ["أشعر بالخوف في الأماكن المغلقة",0],["أشعر بالضيق لكثرة طالبات المدرسة",0],["أشعر بالسعادة أثناء وجودي في مدرستي",1],
+      ["يزعجني التفكير في المستقبل",0],["أستطيع إلقاء كلمة أمام الطابور الصباحي",1],["أواجه صعوبة في أسلوب الرفض وقول (لا) في أمر لا أرغبه",0],
+      ["أعاني من عدم القدرة على إبداء الرأي",0],["لدي معرفة بوسائل التبليغ عند تعرضي للعنف أو الإيذاء",1]]},
+    {k:"car", t:"المشكلات المهنية", from:51, items:[
+      ["أحتاج إلى تنمية مواهبي وقدراتي",0],["لدي إلمام بمتطلبات المهن المختلفة",1],["لدي إلمام بالتخصصات المتاحة بعد الثانوية",1],
+      ["مشاركتي في الأنشطة المدرسية تساعدني في اكتشاف مستقبلي المهني",1],["تساعدني الموجهة الطلابية في اختيار التخصص المناسب",1],
+      ["تستخدم المدرسة المنشورات في توعية الطالبات لاختيار التخصص في المرحلة الجامعية",1],["لدي معرفة بالمسارات التعليمية المناسبة لميولي وقدراتي",1],
+      ["أعتقد أن الأعمال الحرفية ليس لها أهمية كبيرة للمجتمع",0]]},
+    {k:"soc", t:"المشكلات الاجتماعية", from:59, items:[
+      ["أجد صعوبة في تكوين صداقات",0],["أتشاجر كثيرًا مع الآخرين",0],["مصروفي اليومي غير كافٍ",0],["أسهر إلى وقت متأخر من الليل",0],
+      ["أقضي وقتًا طويلًا على مواقع التواصل الاجتماعي",0],["تضايقني مشاركة والديّ في اختياري لصديقاتي",0],["أتعرض لبعض التحرشات الجنسية",0],
+      ["يوجد شخص أو أشخاص يعملون على استهدافي مما يسبب لي الإيذاء",0],["تقوم بعض الطالبات بإتلاف بعض ممتلكاتي",0],["يوجد من يؤثر على تفكيري بشكل خاطئ",0],
+      ["أتعرض لاختراقات إلكترونية لأجهزتي",0],["تنشر بعض الطالبات الإشاعات الكاذبة عن الأخريات في المدرسة أو على الإنترنت",0],
+      ["أشعر بأن لدي قبولًا في مجتمعي المدرسي",1],["أعرف كيف أتعامل مع حالات الطوارئ أو الكوارث الطبيعية",1],
+      ["تهتم الطالبات الأكبر سنًا في المدرسة بالطالبات الأصغر سنًا",1],["أتمتع بعلاقة قوية مع أهلي",1],["أتمتع بعلاقة قوية مع زميلاتي",1],
+      ["أواجه صعوبة في الحديث مع الآخرين",0]]},
+    {k:"fam", t:"المشكلات الأسرية", from:77, items:[
+      ["كثرة التزاماتي المدرسية تعيق استذكاري لدروسي",0],["ينتقدني ولي أمري أمام الآخرين",0],["يأخذ أفراد أسرتي رأيي في أمور الأسرة",1],
+      ["يتغيب أحد والديّ عن المنزل كثيرًا",0],["تكثر المشاجرات بين أفراد أسرتي",0],["يقل الحوار الفعال بين أفراد أسرتي",0],
+      ["تشجعني عائلتي على الاهتمام والتفوق الدراسي",1],["استخدامي لمواقع التواصل الاجتماعي يؤثر على علاقتي مع أسرتي",0]]}
+  ];
+  var PL_ITEMS = []; PL_DOM.forEach(function(d, di){ d.items.forEach(function(x, i){ PL_ITEMS.push({no:d.from + i, t:x[0], pos:!!x[1], dom:di}); }); });
+  var PL_ANS = ["نعم","لا","أحيانًا"];             // القيم المحفوظة: 1 نعم، 2 لا، 3 أحيانًا
+  var PL_CRIT = [7,27,29,36,46,65,66];             // عبارات تستدعي متابعة فردية عاجلة
+  var EDU = ["غير متعلم","يقرأ ويكتب","ابتدائي","متوسط","ثانوي","دبلوم عالي","جامعي","دراسات عليا ( ماجستير أو دكتوراه )"];
+  var JOB = ["مدني","عسكري","قطاع خاص","غير ذلك"];
+  var PL_INFO = [
+    {k:"far", t:"الحي الذي أسكنه بعيد عن المدرسة", o:["نعم","لا"]},
+    {k:"house", t:"نوع المنزل الذي تسكنينه", o:["فيلا","دور","شقة","شعبي","مسلح","آخر"], other:"آخر"},
+    {k:"own", t:"نوع ملكية المنزل", o:["ملك","مستأجر"]},
+    {k:"inc", t:"مستوى دخل الأسرة", o:["3000 ريال فأقل","من 3001 إلى 6000 ريال","من 6001 إلى 9000 ريال","من 9001 إلى 12000 ريال","أكثر من 12000 ريال"]},
+    {k:"fa", t:"هل الأب على قيد الحياة؟", o:["نعم","لا"]},
+    {k:"mo", t:"هل الأم على قيد الحياة؟", o:["نعم","لا"]},
+    {k:"faJob", t:"مهنة الأب", o:JOB},
+    {k:"moJob", t:"مهنة الأم", o:JOB},
+    {k:"faEdu", t:"مستوى تعليم الأب", o:EDU},
+    {k:"moEdu", t:"مستوى تعليم الأم", o:EDU},
+    {k:"live", t:"مع من تعيشين؟", o:["أمي","أبي","الأبوين معًا","آخرين"], other:"آخرين"},
+    {k:"sep", t:"هل الوالدان منفصلان؟", o:["نعم","لا"]},
+    {k:"rep", t:"هل سبق لكِ إعادة السنة (التعثر)؟", o:["نعم","لا"], other:"نعم", otherL:"عدد مرات التعثر"},
+    {k:"grd", t:"تقديري في العام الماضي", o:["ممتاز مرتفع","ممتاز","جيد جدًا مرتفع","جيد جدًا","جيد مرتفع","جيد","مقبول مرتفع","مقبول","ضعيف","راسب","محروم"]}
+  ];
+  var PL_GR = {"1":"أول ثانوي","2":"ثاني ثانوي","3":"ثالث ثانوي"};
+  var PL = [], plStep = 0, plA = {}, plInfo = {};
+  var PL_STEPS = [{t:"معلوماتي العامة"}].concat(PL_DOM.map(function(d){ return {t:d.t, dom:d}; }));
+
+  function isProb(it, v){ return it.pos ? v === 2 : v === 1; }     // الإجابة الدالة على وجود المشكلة
+  function plRadios(name, opts, cur){
+    return '<div class="radios">'+opts.map(function(o, i){
+      var val = typeof o === "string" ? o : o[1], lab = typeof o === "string" ? o : o[0];
+      return '<label><input type="radio" name="'+name+'" value="'+esc(val)+'"'+(String(cur) === String(val) ? ' checked' : '')+'>'+esc(lab)+'</label>';
+    }).join("")+'</div>';
+  }
+  function plDraw(){
+    var s = PL_STEPS[plStep], h = "";
+    $("#plBar").style.width = Math.round(plStep / PL_STEPS.length * 100) + "%";
+    $("#plStepT").textContent = "الجزء " + arNum(plStep + 1) + " من " + arNum(PL_STEPS.length) + ": " + s.t;
+    if(plStep === 0){
+      h += '<div class="row"><label for="plName">الاسم (اختياري)<input type="text" id="plName" autocomplete="off" value="'+esc(plInfo.n || "")+'" placeholder="يمكنك تركه فارغًا"></label>'+
+           '<label for="plGr">الصف<select id="plGr"><option value="">اختاري الصف</option>'+Object.keys(PL_GR).map(function(g){ return '<option value="'+g+'"'+(plInfo.g === g ? ' selected' : '')+'>'+PL_GR[g]+'</option>'; }).join("")+'</select></label>'+
+           '<label for="plAge">العمر<input type="number" id="plAge" min="12" max="22" value="'+esc(plInfo.age || "")+'" style="width:100%"></label></div>';
+      PL_INFO.forEach(function(q, i){
+        var cur = plInfo[q.k] || "";
+        h += '<div class="plq"><div class="plt"><span class="pln">'+arNum(i + 1)+'</span>'+esc(q.t)+'</div>'+plRadios("pi_"+q.k, q.o, cur)+
+          (q.other ? '<input type="text" class="plOther" data-k="'+q.k+'" placeholder="'+esc(q.otherL || "اذكريها")+'" value="'+esc(plInfo[q.k + "_x"] || "")+'"'+(cur === q.other ? '' : ' hidden')+'>' : '')+'</div>';
+      });
+    } else {
+      h += '<p class="hint" style="margin-bottom:8px">اقرئي كل عبارة واختاري: <b>نعم</b> إذا كانت تنطبق عليكِ، <b>لا</b> إذا لم تنطبق، <b>أحيانًا</b> إذا كانت تنطبق في بعض الأوقات.</p>';
+      s.dom.items.forEach(function(x, i){
+        var no = s.dom.from + i;
+        h += '<div class="plq" id="plq'+no+'"><div class="plt"><span class="pln">'+arNum(no)+'</span>'+esc(x[0])+'</div>'+
+          plRadios("pa_"+no, [["نعم",1],["لا",2],["أحيانًا",3]], plA[no] || "")+'</div>';
+      });
+    }
+    $("#plBody").innerHTML = h;
+    $("#plPrev").hidden = plStep === 0;
+    $("#plNext").textContent = plStep === PL_STEPS.length - 1 ? "إرسال الاستبانة" : "التالي ‹";
+  }
+  function plCollect(){
+    if(plStep === 0){
+      plInfo.n = $("#plName").value.trim(); plInfo.g = $("#plGr").value; plInfo.age = $("#plAge").value;
+      PL_INFO.forEach(function(q){
+        var c = $('input[name="pi_'+q.k+'"]:checked'); plInfo[q.k] = c ? c.value : "";
+        var o = $('.plOther[data-k="'+q.k+'"]'); if(o) plInfo[q.k + "_x"] = o.hidden ? "" : o.value.trim();
+      });
+    } else {
+      PL_STEPS[plStep].dom.items.forEach(function(x, i){ var no = PL_STEPS[plStep].dom.from + i, c = $('input[name="pa_'+no+'"]:checked'); if(c) plA[no] = +c.value; });
+    }
+  }
+  function plMissing(){
+    if(plStep === 0){
+      if(!plInfo.g) return "#plGr";
+      for(var i = 0; i < PL_INFO.length; i++) if(!plInfo[PL_INFO[i].k]) return '[name="pi_'+PL_INFO[i].k+'"]';
+      return null;
+    }
+    var d = PL_STEPS[plStep].dom;
+    for(var j = 0; j < d.items.length; j++) if(!plA[d.from + j]) return "#plq" + (d.from + j);
+    return null;
+  }
+  $("#plBody").addEventListener("change", function(e){
+    var r = e.target; if(!r.name || r.name.indexOf("pi_") !== 0) return;
+    var k = r.name.slice(3), q = PL_INFO.filter(function(x){ return x.k === k; })[0], o = $('.plOther[data-k="'+k+'"]');
+    if(o && q) o.hidden = r.value !== q.other;
+  });
+  $("#plPrev").addEventListener("click", function(){ plCollect(); if(plStep > 0){ plStep--; plDraw(); $("#v-plist").scrollIntoView(); } });
+  $("#plNext").addEventListener("click", function(){
+    plCollect();
+    var m = plMissing();
+    if(m){ toast(plStep === 0 ? "أكملي الصف وجميع الأسئلة" : "أجيبي عن جميع العبارات"); var el = $(m); if(el) el.scrollIntoView({block:"center"}); return; }
+    if(plStep < PL_STEPS.length - 1){ plStep++; plDraw(); $("#v-plist").scrollIntoView(); return; }
+    var a = ""; PL_ITEMS.forEach(function(it){ a += plA[it.no] || 0; });
+    var info = {}; PL_INFO.forEach(function(q){ info[q.k] = plInfo[q.k]; if(plInfo[q.k + "_x"]) info[q.k + "_x"] = plInfo[q.k + "_x"]; });
+    var rec = {id:nid(), k:"pl", n:plInfo.n || "", g:plInfo.g, age:plInfo.age || "", info:info, a:a, d:fmtShort.format(new Date()), ts:Date.now()};
+    PL.unshift(rec); store("scaleResults", rec).catch(sendFail);
+    plA = {}; plInfo = {}; plStep = 0;
+    $("#plWrap").hidden = true; $("#plDone").hidden = false; $("#v-plist").scrollIntoView();
+    if(typeof plStats === "function") plStats();
+  });
+  $("#plAgain").addEventListener("click", function(){ $("#plWrap").hidden = false; $("#plDone").hidden = true; plDraw(); });
+  plDraw();
+
+  /* ---------- إحصائيات قائمة المشكلات (للمرشدة) ---------- */
+  var plGrade = "";
+  function pct(n, t){ return t ? Math.round(n / t * 1000) / 10 : 0; }
+  function arPct(x){ return arNum(String(x)) + "٪"; }
+  function lvl(p){ return p >= 50 ? ["bad","مرتفعة"] : p >= 30 ? ["warn","متوسطة"] : ["good","منخفضة"]; }
+  function bar(p, cls){ return '<div class="plbar"><i class="'+(cls || lvl(p)[0])+'" style="width:'+Math.min(100, p)+'%"></i></div>'; }
+  function plRows(){ return PL.filter(function(r){ return !plGrade || r.g === plGrade; }); }
+  function itemStats(rows){
+    return PL_ITEMS.map(function(it, idx){
+      var c = [0,0,0,0];
+      rows.forEach(function(r){ c[+(r.a || "").charAt(idx) || 0]++; });
+      var n = c[1] + c[2] + c[3], pr = it.pos ? c[2] : c[1];
+      return {it:it, y:c[1], no:c[2], s:c[3], n:n, full:pct(pr, n), some:pct(c[3], n), sc:n ? Math.round((pr + c[3] * 0.5) / n * 1000) / 10 : 0};
+    });
+  }
+  function plProbList(r){
+    var out = []; PL_ITEMS.forEach(function(it, idx){ var v = +(r.a || "").charAt(idx); if(isProb(it, v) || v === 3) out.push({it:it, v:v}); }); return out;
+  }
+  function plStats(){
+    var box = $("#plReport"); if(!box) return;
+    var rows = plRows(), n = rows.length, st = itemStats(rows);
+    $$("#plGrTabs .tab").forEach(function(t){ t.setAttribute("aria-pressed", t.dataset.g === plGrade); });
+    if(!n){ box.innerHTML = '<p class="empty">لا توجد استجابات '+(plGrade ? 'لطالبات ' + PL_GR[plGrade] + ' ' : '')+'بعد. شاركي الطالبات رابط الاستبانة: <b dir="ltr">'+esc(location.origin)+'/#plist</b></p>'; return; }
+    var byG = {"1":0,"2":0,"3":0}; PL.forEach(function(r){ if(byG[r.g] !== undefined) byG[r.g]++; });
+    var crit = rows.filter(function(r){ return PL_CRIT.some(function(no){ var it = PL_ITEMS[no - 1], v = +(r.a || "").charAt(no - 1); return isProb(it, v) || v === 3; }); });
+    var dom = PL_DOM.map(function(d, di){ var s = st.filter(function(x){ return x.it.dom === di; }); var avg = s.reduce(function(a, x){ return a + x.sc; }, 0) / s.length; return {t:d.t, avg:Math.round(avg * 10) / 10, s:s}; });
+    var domSorted = dom.slice().sort(function(a, b){ return b.avg - a.avg; });
+    var top = st.slice().sort(function(a, b){ return b.sc - a.sc; }).slice(0, 10);
+    var h = '';
+    h += '<div class="stats">'+
+      '<div class="stat"><b>'+arNum(n)+'</b><span>استجابة'+(plGrade ? ' — ' + PL_GR[plGrade] : '')+'</span></div>'+
+      Object.keys(PL_GR).map(function(g){ return '<div class="stat"><b>'+arNum(byG[g])+'</b><span>'+PL_GR[g]+'</span></div>'; }).join("")+
+      '<div class="stat'+(crit.length ? ' alert' : '')+'"><b>'+arNum(crit.length)+'</b><span>تحتاج متابعة فردية</span></div>'+
+      '<div class="stat"><b>'+esc(domSorted[0].t.replace("المشكلات ",""))+'</b><span>المجال الأعلى</span></div></div>';
+    h += '<p class="hint">«درجة المشكلة» لكل عبارة = نسبة الطالبات اللاتي اخترن الإجابة الدالة على المشكلة + نصف نسبة «أحيانًا». في العبارات الإيجابية (مثل «أعرف طرق الاستذكار الجيد») تُحسب «لا» مشكلة. التصنيف: ٥٠٪ فأكثر مرتفعة، ٣٠–٤٩٪ متوسطة، أقل من ٣٠٪ منخفضة.</p>';
+
+    h += '<h3 class="section-title">ترتيب المجالات</h3><div class="card"><table class="pltab"><thead><tr><th>المجال</th><th>عدد العبارات</th><th>متوسط درجة المشكلة</th><th style="width:40%"></th></tr></thead><tbody>'+
+      domSorted.map(function(d){ var l = lvl(d.avg); return '<tr><td><b>'+esc(d.t)+'</b></td><td>'+arNum(d.s.length)+'</td><td><span class="pill '+l[0]+'">'+arPct(d.avg)+' · '+l[1]+'</span></td><td>'+bar(d.avg)+'</td></tr>'; }).join("")+'</tbody></table></div>';
+
+    h += '<h3 class="section-title">أبرز ١٠ مشكلات</h3><div class="card"><table class="pltab"><thead><tr><th>م</th><th>العبارة</th><th>المجال</th><th>درجة المشكلة</th><th style="width:28%"></th></tr></thead><tbody>'+
+      top.map(function(x, i){ var l = lvl(x.sc); return '<tr><td>'+arNum(i + 1)+'</td><td>'+esc(x.it.t)+(x.it.pos ? ' <span class="hint">(المشكلة: لا)</span>' : '')+'</td><td>'+esc(PL_DOM[x.it.dom].t.replace("المشكلات ",""))+'</td><td><span class="pill '+l[0]+'">'+arPct(x.sc)+'</span></td><td>'+bar(x.sc)+'</td></tr>'; }).join("")+'</tbody></table></div>';
+
+    h += '<h3 class="section-title">تفريغ العبارات حسب المجال</h3>';
+    dom.forEach(function(d){
+      h += '<details class="duty pldet"><summary>'+esc(d.t)+' — متوسط '+arPct(d.avg)+'</summary><div class="scroll"><table class="pltab"><thead><tr><th>م</th><th>العبارة</th><th>نعم</th><th>لا</th><th>أحيانًا</th><th>درجة المشكلة</th><th style="width:18%"></th></tr></thead><tbody>'+
+        d.s.map(function(x){ var l = lvl(x.sc); return '<tr><td>'+arNum(x.it.no)+'</td><td>'+esc(x.it.t)+(x.it.pos ? ' <span class="hint">(المشكلة: لا)</span>' : '')+'</td>'+
+          '<td>'+arNum(x.y)+' <small>('+arPct(pct(x.y, x.n))+')</small></td><td>'+arNum(x.no)+' <small>('+arPct(pct(x.no, x.n))+')</small></td><td>'+arNum(x.s)+' <small>('+arPct(x.some)+')</small></td>'+
+          '<td><span class="pill '+l[0]+'">'+arPct(x.sc)+'</span></td><td>'+bar(x.sc)+'</td></tr>'; }).join("")+'</tbody></table></div></details>';
+    });
+
+    h += '<h3 class="section-title">المعلومات العامة للطالبات</h3><div class="plinfo">';
+    var ages = rows.map(function(r){ return +r.age; }).filter(function(x){ return x > 0; });
+    h += '<div class="card"><h4>العمر</h4><p>'+(ages.length ? 'المتوسط: '+arNum((ages.reduce(function(a,b){return a+b;},0)/ages.length).toFixed(1))+' سنة · من '+arNum(Math.min.apply(null, ages))+' إلى '+arNum(Math.max.apply(null, ages)) : '—')+'</p></div>';
+    PL_INFO.forEach(function(q){
+      var cnt = {}; q.o.forEach(function(o){ cnt[o] = 0; }); rows.forEach(function(r){ var v = r.info && r.info[q.k]; if(v) cnt[v] = (cnt[v] || 0) + 1; });
+      h += '<div class="card"><h4>'+esc(q.t)+'</h4>'+Object.keys(cnt).map(function(o){ var p = pct(cnt[o], n); return '<div class="plrow"><span>'+esc(o)+'</span><b>'+arNum(cnt[o])+' <small>('+arPct(p)+')</small></b>'+bar(p, "brand")+'</div>'; }).join("")+'</div>';
+    });
+    h += '</div>';
+
+    h += '<h3 class="section-title">حالات تحتاج متابعة فردية <span class="hint">(أجابت بوجود مشكلة أو «أحيانًا» في عبارة حساسة)</span></h3>';
+    h += crit.length ? '<div class="card scroll"><table class="pltab"><thead><tr><th>الطالبة</th><th>الصف</th><th>العبارات</th><th>التاريخ</th></tr></thead><tbody>'+
+      crit.map(function(r){
+        var its = PL_CRIT.filter(function(no){ var v = +(r.a || "").charAt(no - 1); return isProb(PL_ITEMS[no - 1], v) || v === 3; })
+          .map(function(no){ var v = +(r.a || "").charAt(no - 1); return '<li>'+esc(PL_ITEMS[no - 1].t)+' — <b>'+PL_ANS[v - 1]+'</b></li>'; }).join("");
+        return '<tr><td>'+(r.n ? esc(r.n) + matchTag(r.n) : '<span class="hint">بدون اسم</span>')+'</td><td>'+esc(PL_GR[r.g] || "")+'</td><td><ul class="plain">'+its+'</ul></td><td>'+esc(r.d || "")+'</td></tr>';
+      }).join("")+'</tbody></table></div>' : '<p class="hint">لا توجد حالات.</p>';
+
+    h += '<h3 class="section-title">الاستجابات الفردية</h3><div class="card scroll"><table class="pltab"><thead><tr><th>الطالبة</th><th>الصف</th><th>العمر</th><th>عدد المشكلات</th><th>أحيانًا</th><th>التاريخ</th><th></th></tr></thead><tbody>'+
+      rows.map(function(r){
+        var pl = plProbList(r), full = pl.filter(function(x){ return x.v !== 3; }).length;
+        return '<tr><td>'+(r.n ? esc(r.n) + matchTag(r.n) : '<span class="hint">بدون اسم</span>')+'</td><td>'+esc(PL_GR[r.g] || "")+'</td><td>'+arNum(r.age || "—")+'</td><td>'+arNum(full)+'</td><td>'+arNum(pl.length - full)+'</td><td>'+esc(r.d || "")+'</td>'+
+          '<td><details><summary class="hint" style="cursor:pointer">عرض</summary><ul class="plain" style="font-size:13px">'+
+          pl.map(function(x){ return '<li>'+arNum(x.it.no)+'. '+esc(x.it.t)+' — <b>'+PL_ANS[x.v - 1]+'</b></li>'; }).join("")+'</ul></details></td></tr>';
+      }).join("")+'</tbody></table></div>';
+    box.innerHTML = h;
+  }
+  function csvCell(v){ v = String(v == null ? "" : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
+  function csvSave(name, lines){
+    var blob = new Blob(["﻿" + lines.map(function(l){ return l.map(csvCell).join(","); }).join("\r\n")], {type:"text/csv;charset=utf-8"});
+    var a = document.createElement("a"), u = URL.createObjectURL(blob); a.href = u; a.download = name; document.body.appendChild(a); a.click();
+    setTimeout(function(){ URL.revokeObjectURL(u); a.remove(); }, 1500);
+  }
+  $("#plCsvStats").addEventListener("click", function(){
+    var rows = plRows(); if(!rows.length){ toast("لا توجد استجابات"); return; }
+    var L = [["م","المجال","العبارة","نوع العبارة","نعم","لا","أحيانًا","عدد المجيبات","نسبة المشكلة الكاملة٪","نسبة أحيانًا٪","درجة المشكلة٪","التصنيف"]];
+    itemStats(rows).forEach(function(x){ L.push([x.it.no, PL_DOM[x.it.dom].t, x.it.t, x.it.pos ? "إيجابية (المشكلة: لا)" : "سلبية (المشكلة: نعم)", x.y, x.no, x.s, x.n, x.full, x.some, x.sc, lvl(x.sc)[1]]); });
+    csvSave("تفريغ-قائمة-المشكلات" + (plGrade ? "-" + PL_GR[plGrade] : "") + ".csv", L);
+  });
+  $("#plCsvAll").addEventListener("click", function(){
+    var rows = plRows(); if(!rows.length){ toast("لا توجد استجابات"); return; }
+    var head = ["الاسم","الصف","العمر","التاريخ"].concat(PL_INFO.map(function(q){ return q.t; })).concat(PL_ITEMS.map(function(it){ return it.no + ". " + it.t; }));
+    var L = [head];
+    rows.forEach(function(r){
+      L.push([r.n || "", PL_GR[r.g] || "", r.age || "", r.d || ""].concat(PL_INFO.map(function(q){ var v = (r.info || {})[q.k] || ""; var x = (r.info || {})[q.k + "_x"]; return x ? v + " (" + x + ")" : v; }))
+        .concat(PL_ITEMS.map(function(it, idx){ var v = +(r.a || "").charAt(idx); return v ? PL_ANS[v - 1] : ""; })));
+    });
+    csvSave("استجابات-قائمة-المشكلات" + (plGrade ? "-" + PL_GR[plGrade] : "") + ".csv", L);
+  });
+  $("#plPrint").addEventListener("click", function(){
+    $$("#plReport details").forEach(function(d){ d.open = true; });
+    document.body.classList.add("plprint"); window.print();
+    setTimeout(function(){ document.body.classList.remove("plprint"); }, 500);
+  });
+  $("#plGrTabs").addEventListener("click", function(e){ var b = e.target.closest("[data-g]"); if(!b) return; plGrade = b.dataset.g; plStats(); });
+  $("#plCopy").addEventListener("click", function(){
+    var u = location.origin + location.pathname.replace(/\/admin\/?$/, "/") + "#plist";
+    (navigator.clipboard ? navigator.clipboard.writeText(u) : Promise.reject()).then(function(){ toast("تم نسخ رابط الاستبانة"); }, function(){ prompt("انسخي الرابط:", u); });
+  });
+  plStats();
 
   /* ---------- survey tabs and builder ---------- */
 
@@ -1974,7 +2296,8 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
 
   /* ---------- counselor dashboard ---------- */
   function dashTab(k){
-    ["inbox","book","scale","parts","fup","surv","acc"].forEach(function(x){ $("#d-"+x).hidden = x !== k; });
+    ["inbox","book","scale","plist","parts","fup","surv","acc"].forEach(function(x){ $("#d-"+x).hidden = x !== k; });
+    if(k === "plist" && typeof plStats === "function") plStats();
     if(k === "acc" && typeof accLoad === "function") accLoad();
     $$("#dashTabs .tab").forEach(function(t){ t.setAttribute("aria-pressed", t.dataset.d === k); });
   }
@@ -2107,12 +2430,12 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
       if(sn.exists){ var d = sn.data(); PROG.evidence = d.evidence || {}; PROG.initiatives = d.initiatives || {}; PROG.media = d.media || {}; calcApps(); if(isStaff){ autoCatOnce(); hstCalc(); hstDraw(); hstSave(); } if(curPid) progDetail(); }
     });
     onColl("parts", function(sn){ PARTS = flat(sn).sort(function(a,b){ return b.id - a.id; }); refreshDash(); if(curPid) progDetail(); });
-    inbox = []; bookings = []; scResults = []; students = []; teachers = [];
+    inbox = []; bookings = []; scResults = []; PL = []; students = []; teachers = [];
     inboxDraw(); bookDraw(); scTableDraw(); renderList();
     onColl("inbox", function(sn){ inbox = flatOwn(sn).sort(function(a,b){ return b.id - a.id; }); applyStatus(); inboxDraw(); refreshDash(); });
     onDoc("inboxStatus/main", function(sn){ statusMap = (sn.exists && sn.data().map) || {}; applyStatus(); inboxDraw(); refreshDash(); });
     onColl("bookings", function(sn){ bookings = flat(sn); bookDraw(); refreshDash(); });
-    onColl("scaleResults", function(sn){ scResults = flat(sn).sort(function(a,b){ return b.id - a.id; }); scTableDraw(); refreshDash(); });
+    onColl("scaleResults", function(sn){ var all = flat(sn).sort(function(a,b){ return b.id - a.id; }); scResults = all.filter(function(r){ return r.k !== "pl"; }); PL = all.filter(function(r){ return r.k === "pl"; }); scTableDraw(); refreshDash(); plStats(); });
     onDoc("lists/main", function(sn){
       if(!sn.exists) return;
       var d = sn.data(), js = JSON.stringify([d.students || [], d.teachers || []]);
