@@ -1552,7 +1552,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
   $("#pgGames").innerHTML = gameCards(Object.keys(GAMES));
 
   var PEND = {ev:[], ini:[]}, ASSETS = null;
-  var PROG = {phrases:{}, games:{}, evidence:{}, initiatives:{}, media:{}, apps:{}}, PARTS = [], curPid = null, phIdx = 0, stTab = "ev";
+  var PROG = {phrases:{}, games:{}, evidence:{}, initiatives:{}, media:{}, apps:{}, pubEv:{}}, PARTS = [], curPid = null, phIdx = 0, stTab = "ev";
   var DEFP = {
     c0:["أنتِ جزء من هذه المدرسة، وبدايتك معنا بداية جميلة.","كل خطوة جديدة تبدأ بسؤال، ونحن هنا لنجيب."],
     c1:["أحلامك ترسم طريقك، فاختاري ما يشبهك.","اعرفي ميولك اليوم لتصنعي مستقبلك غدًا."],
@@ -1580,10 +1580,16 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
       if(l.length) o[pid] = l;
     });
     PROG.apps = o;
+    var pe = {};
+    Object.keys(PROG.evidence).forEach(function(pid){
+      var l = PROG.evidence[pid].filter(function(x){ return x.pub; }).map(function(x){ return {t:x.t, dt:x.dt || "", d:x.d || "", url:x.url || "", ul:x.ul || "", fs:(x.fs || [])}; });
+      if(l.length) pe[pid] = l;
+    });
+    PROG.pubEv = pe;
   }
   function safeUrl(u){ u = String(u || "").trim(); return /^https?:\/\//i.test(u) ? u : ""; }
   var INI_TYPES = ["موقع إلكتروني","تطبيق","نشاط أو مبادرة ميدانية"];
-  function savePub(){ calcApps(); if(DB && isStaff) DB.doc("config/progs").set({phrases:PROG.phrases, games:PROG.games, apps:PROG.apps}).catch(function(){ toast("تعذّر الحفظ"); }); }
+  function savePub(){ calcApps(); if(DB && isStaff) DB.doc("config/progs").set({phrases:PROG.phrases, games:PROG.games, apps:PROG.apps, pubEv:PROG.pubEv}).catch(function(){ toast("تعذّر الحفظ"); }); }
   function saveStf(){ if(DB && isStaff) DB.doc("progStaff/main").set({evidence:PROG.evidence, initiatives:PROG.initiatives, media:PROG.media}).catch(function(){ toast("تعذّر الحفظ"); }); }
   function rmBtn(k, pid, i){ return ' <button class="x" type="button" data-rm="'+k+'|'+pid+'|'+i+'">حذف</button>'; }
   var INI_ST = ["مخطّط","قيد التنفيذ","منفّذ"];
@@ -1682,6 +1688,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
       '<div class="sub-h">ألعاب وأنشطة</div>'+
       (gm.length ? '<ul class="plain">'+gm.map(function(g){ return '<li><b>'+esc(g.t)+'</b>'+(g.d?' — '+esc(g.d):'')+(g.gid?' <button class="btn small" type="button" data-play="'+g.gid+'">العبي الآن ‹</button>':'')+(g.link?' <a href="'+g.link+'">العبي الآن ‹</a>':'')+'</li>'; }).join("")+'</ul><div id="gStage"></div>' : '<p class="hint">ستُضاف ألعاب هذا البرنامج قريبًا.</p>')+
       ((PROG.apps[pid] || []).length ? '<div class="sub-h">مبادرات ومواقع</div><ul class="plain">'+PROG.apps[pid].map(function(x){ return '<li><b>'+esc(x.t)+'</b>'+(x.type?' <span class="tag">'+esc(x.type)+'</span>':'')+(x.d?' — '+esc(x.d):'')+(safeUrl(x.url)?' <a href="'+esc(safeUrl(x.url))+'" target="_blank" rel="noopener">فتح ‹</a>':'')+'</li>'; }).join("")+'</ul>' : '')+
+      ((PROG.pubEv[pid] || []).length ? '<div class="sub-h">شواهد التنفيذ</div><ul class="plain">'+PROG.pubEv[pid].map(function(x){ return '<li><b>'+esc(x.t)+'</b>'+(x.dt?' · '+esc(x.dt):'')+(x.d?'<div style="font-size:14px;white-space:pre-line">'+esc(x.d)+'</div>':'')+(safeUrl(x.url)?'<div style="font-size:14px"><a href="'+esc(safeUrl(x.url))+'" target="_blank" rel="noopener">🔗 '+esc(x.ul || "فتح الرابط")+'</a></div>':'')+thumbs(x.fs)+'</li>'; }).join("")+'</ul>' : '')+
       '<div class="sub-h">طلب مشاركة</div>'+
       '<form class="form" data-f="part"><div class="row"><label for="partName">اسم الطالبة<input type="text" id="partName" required autocomplete="off" placeholder="اكتبي اسمك الثلاثي"></label>'+
       '<label for="partNote">كيف تودين المشاركة؟<input type="text" id="partNote" placeholder="اختياري"></label></div><div><button class="btn" type="submit">إرسال الطلب</button></div></form></div>';
@@ -1691,8 +1698,8 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
       h += '<div class="zone zone-t"><h3>للمرشدة والمعلمات الموكلات</h3><div class="hint">لا يظهر هذا القسم للطالبات.</div>'+
         '<div class="tabs" role="group" aria-label="أقسام البرنامج">'+T.map(function(t){ return '<button class="tab" type="button" data-act="stab" data-t="'+t[0]+'" aria-pressed="'+(stTab===t[0])+'">'+t[1]+'</button>'; }).join("")+'</div>';
       if(stTab === "ev"){
-        h += (ev.length ? '<ul class="plain">'+ev.map(function(x,i){ return '<li><b>'+esc(x.t)+'</b>'+(x.dt?' · '+esc(x.dt):'')+(x.d?'<div style="font-size:14px">'+esc(x.d)+'</div>':'')+(safeUrl(x.url)?'<div style="font-size:14px"><a href="'+esc(safeUrl(x.url))+'" target="_blank" rel="noopener">🔗 '+esc(x.ul || "فتح الرابط")+'</a></div>':'')+thumbs(x.fs)+rmBtn("evidence",pid,i)+'</li>'; }).join("")+'</ul>' : '<p class="hint">لا توجد شواهد بعد.</p>')+
-          '<details class="addbox"><summary>+ إضافة شاهد</summary><form class="form" data-f="ev"><div class="row"><label for="evT">عنوان الشاهد<input type="text" id="evT" required placeholder="مثال: محاضرة توعوية"></label><label for="evDt">التاريخ<input type="text" id="evDt" placeholder="مثال: ١٤٤٨/٠٣/١٥"></label></div><label for="evD">وصف مختصر<textarea id="evD"></textarea></label><div class="row"><label for="evU">رابط موقع أو منصة (اختياري)<input type="url" id="evU" dir="ltr" placeholder="https://"></label><label for="evUl">اسم الرابط<input type="text" id="evUl" placeholder="مثال: منصة سَعَة"></label></div>'+dropZone("ev")+'<div><button class="btn" type="submit">إضافة الشاهد</button></div></form></details>';
+        h += (ev.length ? '<ul class="plain">'+ev.map(function(x,i){ return '<li><b>'+esc(x.t)+'</b>'+(x.dt?' · '+esc(x.dt):'')+(x.d?'<div style="font-size:14px">'+esc(x.d)+'</div>':'')+(safeUrl(x.url)?'<div style="font-size:14px"><a href="'+esc(safeUrl(x.url))+'" target="_blank" rel="noopener">🔗 '+esc(x.ul || "فتح الرابط")+'</a></div>':'')+thumbs(x.fs)+' <button class="btn small ghost" type="button" data-act="evpub" data-i="'+i+'">'+(x.pub?'👁 يظهر للطالبات وأولياء الأمور — إخفاء':'🔒 مخفي — إظهار للجميع')+'</button>'+rmBtn("evidence",pid,i)+'</li>'; }).join("")+'</ul>' : '<p class="hint">لا توجد شواهد بعد.</p>')+
+          '<details class="addbox"><summary>+ إضافة شاهد</summary><form class="form" data-f="ev"><div class="row"><label for="evT">عنوان الشاهد<input type="text" id="evT" required placeholder="مثال: محاضرة توعوية"></label><label for="evDt">التاريخ<input type="text" id="evDt" placeholder="مثال: ١٤٤٨/٠٣/١٥"></label></div><label for="evD">وصف مختصر<textarea id="evD"></textarea></label><label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="evP"> يظهر هذا الشاهد لأولياء الأمور والطالبات</label><div class="row"><label for="evU">رابط موقع أو منصة (اختياري)<input type="url" id="evU" dir="ltr" placeholder="https://"></label><label for="evUl">اسم الرابط<input type="text" id="evUl" placeholder="مثال: منصة سَعَة"></label></div>'+dropZone("ev")+'<div><button class="btn" type="submit">إضافة الشاهد</button></div></form></details>';
       } else if(stTab === "ini"){
         h += (ini.length ? '<ul class="plain">'+ini.map(function(x,i){ return '<li><b>'+esc(x.t)+'</b>'+(x.type?' <span class="tag">'+esc(x.type)+'</span>':'')+(safeUrl(x.url)?' <a href="'+esc(safeUrl(x.url))+'" target="_blank" rel="noopener">فتح الرابط ‹</a>':'')+' <select data-ini="'+pid+'|'+i+'" aria-label="حالة المبادرة">'+INI_ST.map(function(o){ return '<option'+(o===x.st?' selected':'')+'>'+o+'</option>'; }).join("")+'</select>'+(x.d?'<div style="font-size:14px">'+esc(x.d)+'</div>':'')+thumbs(x.fs)+'<div><label class="check"><input type="checkbox" data-pubini="'+pid+'|'+i+'"'+(x.pub?' checked':'')+'>ظاهرة للطالبات</label>'+rmBtn("initiatives",pid,i)+'</div></li>'; }).join("")+'</ul>' : '<p class="hint">لا توجد مبادرات بعد.</p>')+
           '<details class="addbox"><summary>+ إضافة مبادرة</summary><form class="form" data-f="ini"><div class="row"><label for="inT">اسم المبادرة<input type="text" id="inT" required></label><label for="inS">الحالة<select id="inS">'+INI_ST.map(function(o){ return '<option>'+o+'</option>'; }).join("")+'</select></label></div><div class="row"><label for="inTy">النوع<select id="inTy">'+INI_TYPES.map(function(o){ return '<option>'+o+'</option>'; }).join("")+'</select></label><label for="inU">رابط الموقع أو التطبيق (اختياري)<input type="url" id="inU" placeholder="https://" dir="ltr"></label></div><label class="check"><input type="checkbox" id="inP">إظهارها للطالبات</label><label for="inD">وصف مختصر<textarea id="inD"></textarea></label>'+dropZone("ini")+'<div><button class="btn" type="submit">إضافة المبادرة</button></div></form></details>';
@@ -1791,6 +1798,10 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     if(!a) return;
     if(a.dataset.act === "back"){ curPid = null; progDetail(); window.scrollTo(0,0); }
     else if(a.dataset.act === "phr"){ phIdx++; progDetail(); }
+    else if(a.dataset.act === "evpub"){
+      var evl = PROG.evidence[curPid] || [], ex = evl[+a.dataset.i];
+      if(ex){ ex.pub = !ex.pub; saveStf(); savePub(); progDetail(); toast(ex.pub ? "سيظهر الشاهد للطالبات وأولياء الأمور" : "أُخفي الشاهد"); }
+    }
     else if(a.dataset.act === "stab"){ stTab = a.dataset.t; progDetail(); }
     else if(a.dataset.act === "poster"){
       var cv = $("#pstCv"); drawPoster();
@@ -1828,7 +1839,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
         try{ fs = await uploadFiles(PEND[k]); }catch(err){ toast("تعذّر رفع الملفات"); if(btn) btn.disabled = false; return; }
         PEND[k] = [];
       }
-      if(f === "ev") arr(PROG.evidence, pid).push({t:v("evT"), dt:v("evDt"), d:v("evD"), url:safeUrl(v("evU")), ul:v("evUl"), fs:fs});
+      if(f === "ev") arr(PROG.evidence, pid).push({t:v("evT"), dt:v("evDt"), d:v("evD"), url:safeUrl(v("evU")), ul:v("evUl"), pub:$("#evP").checked, fs:fs});
       else arr(PROG.initiatives, pid).push({t:v("inT"), st:v("inS"), d:v("inD"), type:v("inTy"), url:safeUrl(v("inU")), pub:$("#inP").checked, fs:fs});
       saveStf(); savePub();
     }
@@ -2006,7 +2017,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
       if(sn.exists && sn.data().list && sn.data().list.length){ scales = sn.data().list; scalesDraw(); }
     });
     onDoc("config/progs", function(sn){
-      if(sn.exists){ var d = sn.data(); PROG.phrases = d.phrases || {}; PROG.games = d.games || {}; if(!isStaff) PROG.apps = d.apps || {}; if(curPid) progDetail(); }
+      if(sn.exists){ var d = sn.data(); PROG.phrases = d.phrases || {}; PROG.games = d.games || {}; if(!isStaff){ PROG.apps = d.apps || {}; PROG.pubEv = d.pubEv || {}; } if(curPid) progDetail(); }
     });
     if(!isStaff) return;
     onDoc("forms/main", function(sn){
