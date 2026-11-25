@@ -436,6 +436,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
       <h3 class="section-title" style="margin-top:0">إحصائيات قائمة المشكلات الطلابية ١٤٤٥هـ</h3>
       <div class="actions noprint" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px">
         <button class="btn small" type="button" id="plCopy">نسخ رابط الاستبانة للطالبات</button>
+        <button class="btn small ghost" type="button" id="plImport">استيراد استجابات (من الاستبانة المستقلة)</button><input type="file" id="plImpFile" accept=".json,application/json" hidden>
         <button class="btn small ghost" type="button" id="plCsvStats">تنزيل التفريغ (Excel)</button>
         <button class="btn small ghost" type="button" id="plCsvAll">تنزيل جميع الاستجابات (Excel)</button>
         <button class="btn small ghost" type="button" id="plPrint">طباعة التقرير / PDF</button>
@@ -1454,6 +1455,19 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     $$("#plReport details").forEach(function(d){ d.open = true; });
     document.body.classList.add("plprint"); window.print();
     setTimeout(function(){ document.body.classList.remove("plprint"); }, 500);
+  });
+  $("#plImport").addEventListener("click", function(){ $("#plImpFile").click(); });
+  $("#plImpFile").addEventListener("change", function(){
+    var f = this.files[0]; this.value = ""; if(!f) return;
+    if(!DB || !isStaff || !isCounselor){ toast("الاستيراد للمرشدة بعد تسجيل الدخول"); return; }
+    f.text().then(function(t){
+      var j = JSON.parse(t), items = (j && j.items || []).filter(function(r){ return r && r.k === "pl" && typeof r.a === "string"; });
+      if(!items.length){ toast("الملف لا يحتوي استجابات صالحة"); return; }
+      var have = {}; PL.forEach(function(r){ have[r.id + "|" + r.ts] = 1; });
+      var add = items.filter(function(r){ return !have[r.id + "|" + r.ts]; });
+      if(!add.length){ toast("كل الاستجابات مستوردة سابقًا"); return; }
+      return DB.doc("scaleResults/import-" + Date.now()).set({items:add}).then(function(){ toast("تم استيراد " + arNum(add.length) + " استجابة" + (items.length > add.length ? " (تخطّي " + arNum(items.length - add.length) + " مكرّرة)" : "")); });
+    }).catch(function(){ toast("تعذّر قراءة الملف أو حفظه"); });
   });
   $("#plGrTabs").addEventListener("click", function(e){ var b = e.target.closest("[data-g]"); if(!b) return; plGrade = b.dataset.g; plStats(); });
   $("#plCopy").addEventListener("click", function(){
