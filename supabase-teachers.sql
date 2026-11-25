@@ -1,6 +1,9 @@
 -- اتزان: دور «معلمة» بصلاحيات أضيق. شغّليه مرة واحدة في Supabase ← SQL Editor ← Run
 -- المرشدة: كل شيء. المعلمة: نماذج المعلمات + شواهد البرامج + قراءة القوائم فقط (لا ترى الوارد ولا الحجوزات ولا نتائج المقاييس).
 
+grant usage on schema public to service_role;
+grant select, insert, update, delete on public.staff_emails to service_role;
+
 alter table public.staff_emails add column if not exists role text not null default 'counselor';
 
 create or replace function public.is_counselor() returns boolean
