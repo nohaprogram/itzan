@@ -236,17 +236,21 @@ img{max-width:100%}
 :root{color-scheme:light}
 body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teacher #v-lists h3.section-title{display:none!important}
 .thw{display:inline-flex;flex-direction:column;gap:4px;align-items:center}.thw.off .th{opacity:.35}
-.hstats{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin:14px 0 26px}
-.hst{--hc:#6b5d00;--hbg:#F4ED96;background:var(--hbg);border-radius:22px;padding:20px 14px 18px;text-align:center;box-shadow:0 6px 16px rgba(60,40,90,.14)}
-.hst .ico{width:64px;height:64px;margin:0 auto 6px;display:grid;place-items:center;color:var(--hc)}
-.hst .ico svg{width:56px;height:56px;fill:none;stroke:currentColor;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round}
-.hst b{display:block;font-size:40px;font-weight:800;font-family:var(--f-display);line-height:1.25;color:var(--hc)}
-.hst strong{display:block;font-size:16px;font-weight:600;color:#3a3200;margin-top:2px}
+.hstats{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:22px 14px;margin:14px 0 26px}
+.hst{--f:#F4ED96;--k:#6b5d00;text-align:center;padding:4px 6px}
+.hst .ico{position:relative;width:124px;height:124px;margin:0 auto 16px;border-radius:52% 48% 50% 50% / 50% 53% 47% 50%;background:var(--f);display:grid;place-items:center;color:var(--k);z-index:0}
+.hst .ico::before{content:"";position:absolute;inset:-9px 10px 11px -10px;border:1.6px solid var(--k);opacity:.4;border-radius:50% 50% 48% 52% / 52% 48% 52% 48%;z-index:-1}
+.hst .ico svg{width:58px;height:58px;fill:none;stroke:currentColor;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round}
+.hst .ico.num{font-size:44px;font-weight:800;font-family:var(--f-display)}
+.hst strong{display:block;font-size:17px;font-weight:700;color:var(--k);line-height:1.5}
+.hst b{display:block;font-size:34px;font-weight:800;font-family:var(--f-display);line-height:1.2;color:var(--fg)}
 .hst em{display:none}
-.hst small{display:block;color:#5a4f00;font-size:13px;line-height:1.7;margin-top:6px}
-.hst.tot{outline:2.5px solid var(--hc);outline-offset:-2.5px}
-.hstats.prg{grid-template-columns:repeat(auto-fit,minmax(150px,1fr));margin-top:0}
-.hstats.prg .hst{padding:14px 10px}.hstats.prg .hst b{font-size:30px}.hstats.prg .hst strong{font-size:14px}
+.hst small{display:block;color:var(--muted);font-size:13px;line-height:1.7;margin-top:6px}
+.hstats.prg{grid-template-columns:repeat(auto-fit,minmax(130px,1fr));margin-top:0}
+.hstats.prg .hst .ico{width:92px;height:92px;font-size:34px;margin-bottom:12px}
+.hstats.prg .hst strong{font-size:14px;color:var(--fg);font-weight:600}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]) .hst strong{filter:brightness(1.5)}}
+:root[data-theme="dark"] .hst strong{filter:brightness(1.5)}
 .hsrow{display:grid;grid-template-columns:80px 1fr 2fr 110px auto;gap:8px;margin-bottom:8px}
 @media(max-width:600px){.hsrow{grid-template-columns:1fr 1fr}}
 </style>
@@ -2144,6 +2148,8 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     flag:["وطن",'<path d="M5 21V4M5 4h12l-2 4 2 4H5"/>']
   };
   function icoSvg(k){ return '<svg viewBox="0 0 24 24" aria-hidden="true">'+(ICONS[k] || ICONS.star)[1]+'</svg>'; }
+  var PAL = [["#FAD1E0","#a23a66"],["#CDEBDD","#2d7a58"],["#DAD0F5","#5b46a6"],["#FFDDBD","#a35a1c"],["#C6E3F7","#2a6da0"],["#F4ED96","#6b5d00"],["#F6C9C9","#a03d3d"],["#D3EBA9","#587a1a"]];
+  function pst(i){ var c = PAL[i % PAL.length]; return ' style="--f:'+c[0]+';--k:'+c[1]+'"'; }
   function evCats(){ return HST.map(function(x){ return x.l; }); }
   function hstCalc(){
     var dc = 0; Object.keys(PROG.evidence).forEach(function(pid){ PROG.evidence[pid].forEach(function(e){ if(!e.nc) dc++; }); }); if(isStaff){ HSTTOT = dc; HPROGS = Object.keys(PIDS).map(function(pid){ var n = (PROG.evidence[pid] || []).filter(function(e){ return !e.nc; }).length; return {p:PIDS[pid].t, n:n}; }).filter(function(x){ return x.n > 0; }); }
@@ -2156,10 +2162,10 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     });
   }
   function hstDraw(){
-    $("#hStats").innerHTML = (HSTTOT > 0 ? '<div class="hst tot"><div class="ico">'+icoSvg("star")+'</div><b>'+arNum(HSTTOT)+'</b><strong>البرامج</strong></div>' : '')+HST.map(function(x){
+    $("#hStats").innerHTML = (HSTTOT > 0 ? '<div class="hst tot"'+pst(5)+'><div class="ico">'+icoSvg("star")+'</div><strong>البرامج</strong><b>'+arNum(HSTTOT)+'</b></div>' : '')+HST.map(function(x,i){
       var det = x.s || (x.auto && x.auto.length ? x.auto.join(" · ") : "");
-      return '<div class="hst"><div class="ico">'+icoSvg(x.ic)+'</div><b>'+arNum(+x.n || 0)+'</b><strong>'+esc(x.l)+'</strong>'+(det?'<small>'+esc(det)+'</small>':'')+'</div>'; }).join("");
-    $("#hProgs").innerHTML = HPROGS.map(function(x){ return '<div class="hst"><b>'+arNum(x.n)+'</b><strong>'+esc(x.p)+'</strong></div>'; }).join("");
+      return '<div class="hst"'+pst(i)+'><div class="ico">'+icoSvg(x.ic)+'</div><strong>'+esc(x.l)+'</strong><b>'+arNum(+x.n || 0)+'</b>'+(det?'<small>'+esc(det)+'</small>':'')+'</div>'; }).join("");
+    $("#hProgs").innerHTML = HPROGS.map(function(x,i){ return '<div class="hst"'+pst(i+2)+'><div class="ico num">'+arNum(x.n)+'</div><strong>'+esc(x.p)+'</strong></div>'; }).join("");
     if(isStaff) $("#hsRows").innerHTML = HST.map(function(x,i){ return '<div class="hsrow"><input type="number" min="0" data-hn="'+i+'" value="'+(+x.m||0)+'" aria-label="عدد يدوي إضافي" title="عدد يدوي يُضاف إلى المحسوب من الشواهد"><input type="text" data-hl="'+i+'" value="'+esc(x.l)+'" aria-label="العنوان" placeholder="العنوان"><input type="text" data-hs="'+i+'" value="'+esc(x.s||"")+'" aria-label="التفاصيل" placeholder="التفاصيل (إن تُرك فارغًا تُكتب أسماء الشواهد تلقائيًا)"><select data-hi="'+i+'" aria-label="الأيقونة">'+Object.keys(ICONS).map(function(k){ return '<option value="'+k+'"'+(x.ic===k?' selected':'')+'>'+ICONS[k][0]+'</option>'; }).join("")+'</select><button class="x" type="button" data-hd="'+i+'">حذف</button></div>'; }).join("");
   }
   function hstSave(force){
@@ -2185,8 +2191,8 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     w.hidden = false;
     var gn = ["أول ثانوي","ثاني ثانوي","ثالث ثانوي"];
     var det = P.g ? P.g.map(function(n,i){ return gn[i]+" "+arNum(n); }).join(" · ") : "";
-    $("#hPeople").innerHTML = [["cap","الطالبات",P.s,det],["board","المعلمات",P.t,""],["check","المشرفات التعليميات",P.v,""],["brief","الإداريات",P.a,""]].filter(function(x){ return x[2] !== undefined; }).map(function(x){
-      return '<div class="hst"><div class="ico">'+icoSvg(x[0])+'</div><b>'+arNum(x[2])+'</b><strong>'+x[1]+'</strong>'+(x[3]?'<small>'+esc(x[3])+'</small>':'')+'</div>'; }).join("");
+    $("#hPeople").innerHTML = [["cap","الطالبات",P.s,det],["board","المعلمات",P.t,""],["check","المشرفات التعليميات",P.v,""],["brief","الإداريات",P.a,""]].filter(function(x){ return x[2] !== undefined; }).map(function(x,i){
+      return '<div class="hst"'+pst(i+1)+'><div class="ico">'+icoSvg(x[0])+'</div><strong>'+x[1]+'</strong><b>'+arNum(x[2])+'</b>'+(x[3]?'<small>'+esc(x[3])+'</small>':'')+'</div>'; }).join("");
   }
   function peopleSave(){
     if(!isStaff || !isCounselor) return;
