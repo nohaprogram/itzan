@@ -37,10 +37,10 @@ create policy counselor_all on public.docs for all to authenticated
 create policy teacher_read on public.docs for select to authenticated
   using (public.is_staff() and coll in ('lists','progStaff','config'));
 create policy teacher_write on public.docs for insert to authenticated
-  with check (public.is_staff() and ((coll = 'progStaff') or (coll = 'config' and id = 'progs')));
+  with check (public.is_staff() and ((coll = 'progStaff') or (coll = 'config' and id in ('progs','homeStats'))));
 create policy teacher_update on public.docs for update to authenticated
-  using (public.is_staff() and ((coll = 'progStaff') or (coll = 'config' and id = 'progs')))
-  with check (public.is_staff() and ((coll = 'progStaff') or (coll = 'config' and id = 'progs')));
+  using (public.is_staff() and ((coll = 'progStaff') or (coll = 'config' and id in ('progs','homeStats'))))
+  with check (public.is_staff() and ((coll = 'progStaff') or (coll = 'config' and id in ('progs','homeStats'))));
 
 -- إضافة معلمة (غيّري البريد):
 -- insert into public.staff_emails (email, role) values ('teacher@alzikr.edu.sa', 'teacher') on conflict (email) do update set role = 'teacher';
