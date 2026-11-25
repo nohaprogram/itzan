@@ -1604,8 +1604,20 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     try{
       m.textContent = "جارٍ قراءة الملف…";
       var z = await JSZip.loadAsync(f), data = JSON.parse(await z.file("evidence.json").async("string")), added = 0, skipped = 0, newItems = [];
+      var renamed = 0;
       for(var i = 0; i < data.items.length; i++){
         var it = data.items[i], list = arr(PROG.evidence, it.pid);
+        if(it.ini){
+          var il = arr(PROG.initiatives, it.pid);
+          if(!il.some(function(x){ return x.t === it.t; })){ il.push({t:it.t, st:"", d:it.d, type:"منصة", url:it.url, pub:true, fs:[]}); added++; } else skipped++;
+          var el = list.filter(function(x){ return x.t === it.t; })[0];
+          if(!el) list.push({t:it.t, dt:"", d:it.d, url:it.url, ul:it.ul, fs:[]});
+          continue;
+        }
+        if(it.was){
+          var old = list.filter(function(x){ return x.t === it.was && x.dt === it.dt; })[0];
+          if(old){ old.t = it.t; renamed++; continue; }
+        }
         if(list.some(function(x){ return x.t === it.t && x.dt === it.dt; }) || newItems.some(function(x){ return x.pid === it.pid && x.e.t === it.t && x.e.dt === it.dt; })){ skipped++; continue; }
         var fs = [];
         for(var j = 0; j < it.imgs.length; j++){
@@ -1618,8 +1630,8 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
         newItems.push({pid:it.pid, e:{t:it.t, dt:it.dt, d:it.d, fs:fs}}); added++;
       }
       newItems.forEach(function(n){ var l = arr(PROG.evidence, n.pid); if(!l.some(function(x){ return x.t === n.e.t && x.dt === n.e.dt; })) l.push(n.e); });
-      saveStf();
-      m.textContent = "تم: أُضيف " + added + " شاهدًا" + (skipped ? " وتُخطّي " + skipped + " موجودًا مسبقًا" : "") + ".";
+      saveStf(); savePub();
+      m.textContent = "تم: أُضيف " + added + " شاهدًا" + (renamed ? " وعُدّل اسم " + renamed : "") + (skipped ? " وتُخطّي " + skipped + " موجودًا مسبقًا" : "") + ".";
       if(curPid) progDetail(); toast("تم استيراد الشواهد");
     }catch(e){ m.textContent = "تعذّر الاستيراد: " + (e && e.message || ""); }
     inp.value = "";
