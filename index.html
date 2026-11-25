@@ -2148,7 +2148,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
   function pst(i){ var c = PAL_ONE ? ["#CABED8","#4b3a6e"] : PAL[i % PAL.length]; return ' style="--f:'+c[0]+';--k:'+c[1]+'"'; }
   function evCats(){ return HST.map(function(x){ return x.l; }); }
   function hstCalc(){
-    var dc = 0; Object.keys(PROG.evidence).forEach(function(pid){ PROG.evidence[pid].forEach(function(e){ if(!e.nc) dc++; }); }); if(isStaff){ HSTTOT = dc; HPROGS = Object.keys(PIDS).map(function(pid){ var n = (PROG.evidence[pid] || []).filter(function(e){ return !e.nc; }).length; return {p:PIDS[pid].t, n:n}; }).filter(function(x){ return x.n > 0; }); }
+    var seen = {}, dc = 0; Object.keys(PROG.evidence).forEach(function(pid){ PROG.evidence[pid].forEach(function(e){ if(e.nc) return; var k = pid+'|'+String(e.t||'').replace(/\s+/g,' ').trim(); if(!seen[k]){ seen[k] = 1; dc++; } }); }); if(isStaff){ HSTTOT = dc; HPROGS = Object.keys(PIDS).map(function(pid){ var n = (PROG.evidence[pid] || []).filter(function(e){ return !e.nc; }).length; return {p:PIDS[pid].t, n:n}; }).filter(function(x){ return x.n > 0; }); }
     HST.forEach(function(x){
       var cnt = 0, names = [];
       Object.keys(PROG.evidence).forEach(function(pid){ PROG.evidence[pid].forEach(function(e){
