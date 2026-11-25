@@ -42,13 +42,13 @@ create policy public_read on public.docs for select to authenticated
 
 -- كل زائرة: تقرأ وتكتب وثيقتها هي فقط (شكوى / استشارة / حجز / نتيجة مقياس / مشاركة)
 create policy own_read on public.docs for select to authenticated
-  using (coll in ('inbox','bookings','scaleResults','parts','slots') and id = auth.uid()::text);
+  using (coll in ('inbox','bookings','scaleResults','parts','slots','visits') and id = auth.uid()::text);
 create policy own_insert on public.docs for insert to authenticated
-  with check (coll in ('inbox','bookings','scaleResults','parts','slots') and id = auth.uid()::text
+  with check (coll in ('inbox','bookings','scaleResults','parts','slots','visits') and id = auth.uid()::text
               and pg_column_size(data) < 300000);
 create policy own_update on public.docs for update to authenticated
-  using (coll in ('inbox','bookings','scaleResults','parts','slots') and id = auth.uid()::text)
-  with check (coll in ('inbox','bookings','scaleResults','parts','slots') and id = auth.uid()::text
+  using (coll in ('inbox','bookings','scaleResults','parts','slots','visits') and id = auth.uid()::text)
+  with check (coll in ('inbox','bookings','scaleResults','parts','slots','visits') and id = auth.uid()::text
               and pg_column_size(data) < 300000);
 
 -- مخزن الصور والفيديوهات (خاص: للموظفات فقط)

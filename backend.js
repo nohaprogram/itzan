@@ -135,6 +135,7 @@
   window.itzanAuth = {
     on: ON,
     role: staffRole,
+    rpc: async function(name){ var r = await rest("rpc/"+name, {method:"POST", headers:{"Content-Type":"application/json"}, body:"{}"}); return r; },
     token: async function(){ return (await ensure()).at; },
     login: async function(email, pw){
       var r = await authCall("token?grant_type=password", {email:email, password:pw});

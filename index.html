@@ -244,6 +244,8 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
 .hst b{display:block;font-size:38px;font-weight:800;font-family:var(--f-display);line-height:1.3;color:var(--k)}
 .hst strong{display:block;font-size:15px;font-weight:500;color:#2f2548;line-height:1.6}
 .hst small{display:block;color:#4a4163;font-size:12.5px;line-height:1.7;margin-top:6px}
+.hstats.reach{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+.pl-st{font:inherit}.pl-done{background:#e3f1e6}.pl-no{background:#fbe9e7}.pl-post{background:#fff4d6}
 .hstats.prg{grid-template-columns:repeat(auto-fit,minmax(140px,1fr));margin-top:0}
 .hstats.prg .hst{padding:16px 10px 14px}
 .hstats.prg .hst b{font-size:32px}
@@ -314,12 +316,13 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
 
   <div class="sec-h"><div><div class="eyebrow">منجزات هذا العام</div><h2>مؤشرات الأداء</h2></div></div>
   <div class="hstats" id="hStats"></div>
+  <div class="hstats reach" id="hReach" hidden></div>
   <div id="hPeopleWrap" hidden>
     <div class="sec-h"><div><div class="eyebrow">مجتمع المدرسة</div><h2>المدرسة بالأرقام</h2></div></div>
     <div class="hstats" id="hPeople"></div>
   </div>
   <details class="addbox" data-staff hidden><summary>تعديل الإحصائيات</summary>
-    <form class="form" id="hsForm"><div id="hsRows"></div>
+    <form class="form" id="hsForm"><label for="hsBm">مستفيدات إضافيات (إدخال يدوي، يُضاف إلى ما في الشواهد)<input type="number" id="hsBm" min="0" value="0"></label><div id="hsRows"></div>
       <div><button class="btn small ghost" type="button" id="hsAdd">+ إضافة بند</button> <button class="btn" type="submit">حفظ</button></div></form>
   </details>
 
@@ -370,6 +373,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     <button class="tab" type="button" data-d="parts" aria-pressed="false">طلبات المشاركة</button>
     <button class="tab" type="button" data-d="fup" aria-pressed="false">نماذج المتابعة</button>
     <button class="tab" type="button" data-d="surv" aria-pressed="false">الاستبانات</button>
+    <button class="tab" type="button" data-d="plan" aria-pressed="false">الخطة السنوية</button>
     <button class="tab" type="button" data-d="acc" aria-pressed="false">حسابات الموظفات</button>
   </div>
   <div id="d-inbox">
@@ -457,6 +461,21 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     <p class="hint" id="fupNote" style="margin:10px 0"></p>
     <div id="fupRows"></div>
     <div class="actions"><button class="btn" type="button" id="fupDl">تنزيل النموذج (Word)</button><button class="btn ghost" type="button" id="fupClear">مسح النموذج</button><span class="hint" id="fupSave" aria-live="polite"></span></div>
+  </div>
+  <div id="d-plan" hidden>
+    <div data-staff hidden>
+      <h3 class="section-title">الخطة السنوية</h3>
+      <p class="hint" id="plSum"></p>
+      <details class="addbox"><summary>+ إضافة بند للخطة</summary>
+        <form class="form" id="plForm">
+          <div class="row"><label for="plT">البرنامج / الفعالية<input type="text" id="plT" required></label>
+          <label for="plM">الموعد المخطط (شهر أو تاريخ)<input type="text" id="plM" placeholder="مثال: ربيع الأول ١٤٤٨"></label></div>
+          <div class="row"><label for="plG">الفئة المستهدفة<input type="text" id="plG" placeholder="طالبات / أولياء أمور / معلمات"></label>
+          <label for="plP">ربط ببرنامج<select id="plP"><option value="">بدون</option></select></label></div>
+          <div><button class="btn" type="submit">إضافة</button></div>
+        </form></details>
+      <div class="scroll"><table id="plTable"></table></div>
+    </div>
   </div>
   <div id="d-acc" hidden>
     <div data-staff hidden>
@@ -1902,7 +1921,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
   $("#pgGames").innerHTML = gameCards(Object.keys(GAMES));
 
   var PEND = {ev:[], ini:[]}, ASSETS = null;
-  var PROG = {phrases:{}, games:{}, evidence:{}, initiatives:{}, media:{}, apps:{}, pubEv:{}}, PARTS = [], curPid = null, phIdx = 0, stTab = "ev";
+  var PROG = {plan:[], phrases:{}, games:{}, evidence:{}, initiatives:{}, media:{}, apps:{}, pubEv:{}}, PARTS = [], curPid = null, phIdx = 0, stTab = "ev";
   var DEFP = {
     c0:["أنتِ جزء من هذه المدرسة، وبدايتك معنا بداية جميلة.","كل خطوة جديدة تبدأ بسؤال، ونحن هنا لنجيب."],
     c1:["أحلامك ترسم طريقك، فاختاري ما يشبهك.","اعرفي ميولك اليوم لتصنعي مستقبلك غدًا."],
@@ -1940,7 +1959,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
   function safeUrl(u){ u = String(u || "").trim(); return /^https?:\/\//i.test(u) ? u : ""; }
   var INI_TYPES = ["موقع إلكتروني","تطبيق","نشاط أو مبادرة ميدانية"];
   function savePub(){ calcApps(); if(DB && isStaff) DB.doc("config/progs").set({phrases:PROG.phrases, games:PROG.games, apps:PROG.apps, pubEv:PROG.pubEv}).catch(function(){ toast("تعذّر الحفظ"); }); }
-  function saveStf(){ if(DB && isStaff){ DB.doc("progStaff/main").set({evidence:PROG.evidence, initiatives:PROG.initiatives, media:PROG.media}).catch(function(){ toast("تعذّر الحفظ"); }); hstSave(); hstDraw(); } }
+  function saveStf(){ if(DB && isStaff){ DB.doc("progStaff/main").set({evidence:PROG.evidence, initiatives:PROG.initiatives, media:PROG.media, plan:PROG.plan || []}).catch(function(){ toast("تعذّر الحفظ"); }); hstSave(); hstDraw(); } }
   function rmBtn(k, pid, i){ return ' <button class="x" type="button" data-rm="'+k+'|'+pid+'|'+i+'">حذف</button>'; }
   var INI_ST = ["مخطّط","قيد التنفيذ","منفّذ"];
 
@@ -2084,8 +2103,8 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
       h += '<div class="zone zone-t"><h3>للمرشدة والمعلمات الموكلات</h3><div class="hint">لا يظهر هذا القسم للطالبات.</div>'+
         '<div class="tabs" role="group" aria-label="أقسام البرنامج">'+T.map(function(t){ return '<button class="tab" type="button" data-act="stab" data-t="'+t[0]+'" aria-pressed="'+(stTab===t[0])+'">'+t[1]+'</button>'; }).join("")+'</div>';
       if(stTab === "ev"){
-        h += (ev.length ? '<ul class="plain">'+ev.map(function(x,i){ return '<li><b>'+esc(x.t)+'</b>'+(x.dt?' · '+esc(x.dt):'')+(x.d?'<div style="font-size:14px">'+esc(x.d)+'</div>':'')+(safeUrl(x.url)?'<div style="font-size:14px"><a href="'+esc(safeUrl(x.url))+'" target="_blank" rel="noopener">🔗 '+esc(x.ul || "فتح الرابط")+'</a></div>':'')+'<div class="hint">التصنيف: '+evCatSelect(x.cat || "", 'data-evc="'+i+'"')+' العدد: <input type="number" min="1" style="width:70px" data-evn="'+i+'" value="'+(x.cnt === undefined ? 1 : x.cnt)+'"></div>'+thumbsStaff(x.fs, i)+' <button class="btn small ghost" type="button" data-act="evpub" data-i="'+i+'">'+(x.pub?'👁 يظهر للطالبات وأولياء الأمور — إخفاء':'🔒 مخفي — إظهار للجميع')+'</button>'+rmBtn("evidence",pid,i)+'</li>'; }).join("")+'</ul>' : '<p class="hint">لا توجد شواهد بعد.</p>')+
-          '<details class="addbox"><summary>+ إضافة شاهد</summary><form class="form" data-f="ev"><div class="row"><label for="evT">عنوان الشاهد<input type="text" id="evT" required placeholder="مثال: محاضرة توعوية"></label><label for="evDt">التاريخ<input type="text" id="evDt" placeholder="مثال: ١٤٤٨/٠٣/١٥"></label></div><label for="evD">وصف مختصر<textarea id="evD"></textarea></label><label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="evP"> يظهر هذا الشاهد لأولياء الأمور والطالبات</label><div class="row"><label for="evC">التصنيف في إحصائيات الرئيسية'+evCatSelect("", 'id="evC"')+'</label><label for="evN">العدد (مثل ٦ لقاءات)<input type="number" id="evN" min="1" value="1"></label></div><div class="row"><label for="evU">رابط موقع أو منصة (اختياري)<input type="url" id="evU" dir="ltr" placeholder="https://"></label><label for="evUl">اسم الرابط<input type="text" id="evUl" placeholder="مثال: منصة سَعَة"></label></div>'+dropZone("ev")+'<div><button class="btn" type="submit">إضافة الشاهد</button></div></form></details>';
+        h += (ev.length ? '<ul class="plain">'+ev.map(function(x,i){ return '<li><b>'+esc(x.t)+'</b>'+(x.dt?' · '+esc(x.dt):'')+(x.d?'<div style="font-size:14px">'+esc(x.d)+'</div>':'')+(safeUrl(x.url)?'<div style="font-size:14px"><a href="'+esc(safeUrl(x.url))+'" target="_blank" rel="noopener">🔗 '+esc(x.ul || "فتح الرابط")+'</a></div>':'')+'<div class="hint">التصنيف: '+evCatSelect(x.cat || "", 'data-evc="'+i+'"')+' العدد: <input type="number" min="1" style="width:70px" data-evn="'+i+'" value="'+(x.cnt === undefined ? 1 : x.cnt)+'"> المستفيدات: <input type="number" min="0" style="width:80px" data-evb="'+i+'" value="'+(+x.ben || 0)+'"></div>'+thumbsStaff(x.fs, i)+' <button class="btn small ghost" type="button" data-act="evpub" data-i="'+i+'">'+(x.pub?'👁 يظهر للطالبات وأولياء الأمور — إخفاء':'🔒 مخفي — إظهار للجميع')+'</button>'+rmBtn("evidence",pid,i)+'</li>'; }).join("")+'</ul>' : '<p class="hint">لا توجد شواهد بعد.</p>')+
+          '<details class="addbox"><summary>+ إضافة شاهد</summary><form class="form" data-f="ev"><div class="row"><label for="evT">عنوان الشاهد<input type="text" id="evT" required placeholder="مثال: محاضرة توعوية"></label><label for="evDt">التاريخ<input type="text" id="evDt" placeholder="مثال: ١٤٤٨/٠٣/١٥"></label></div><label for="evD">وصف مختصر<textarea id="evD"></textarea></label><label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="evP"> يظهر هذا الشاهد لأولياء الأمور والطالبات</label><div class="row"><label for="evC">التصنيف في إحصائيات الرئيسية'+evCatSelect("", 'id="evC"')+'</label><label for="evN">العدد (مثل ٦ لقاءات)<input type="number" id="evN" min="1" value="1"></label><label for="evB">عدد المستفيدات<input type="number" id="evB" min="0" value="0"></label></div><div class="row"><label for="evU">رابط موقع أو منصة (اختياري)<input type="url" id="evU" dir="ltr" placeholder="https://"></label><label for="evUl">اسم الرابط<input type="text" id="evUl" placeholder="مثال: منصة سَعَة"></label></div>'+dropZone("ev")+'<div><button class="btn" type="submit">إضافة الشاهد</button></div></form></details>';
       } else if(stTab === "ini"){
         h += (ini.length ? '<ul class="plain">'+ini.map(function(x,i){ return '<li><b>'+esc(x.t)+'</b>'+(x.type?' <span class="tag">'+esc(x.type)+'</span>':'')+(safeUrl(x.url)?' <a href="'+esc(safeUrl(x.url))+'" target="_blank" rel="noopener">فتح الرابط ‹</a>':'')+' <select data-ini="'+pid+'|'+i+'" aria-label="حالة المبادرة">'+INI_ST.map(function(o){ return '<option'+(o===x.st?' selected':'')+'>'+o+'</option>'; }).join("")+'</select>'+(x.d?'<div style="font-size:14px">'+esc(x.d)+'</div>':'')+thumbs(x.fs)+'<div><label class="check"><input type="checkbox" data-pubini="'+pid+'|'+i+'"'+(x.pub?' checked':'')+'>ظاهرة للطالبات</label>'+rmBtn("initiatives",pid,i)+'</div></li>'; }).join("")+'</ul>' : '<p class="hint">لا توجد مبادرات بعد.</p>')+
           '<details class="addbox"><summary>+ إضافة مبادرة</summary><form class="form" data-f="ini"><div class="row"><label for="inT">اسم المبادرة<input type="text" id="inT" required></label><label for="inS">الحالة<select id="inS">'+INI_ST.map(function(o){ return '<option>'+o+'</option>'; }).join("")+'</select></label></div><div class="row"><label for="inTy">النوع<select id="inTy">'+INI_TYPES.map(function(o){ return '<option>'+o+'</option>'; }).join("")+'</select></label><label for="inU">رابط الموقع أو التطبيق (اختياري)<input type="url" id="inU" placeholder="https://" dir="ltr"></label></div><label class="check"><input type="checkbox" id="inP">إظهارها للطالبات</label><label for="inD">وصف مختصر<textarea id="inD"></textarea></label>'+dropZone("ini")+'<div><button class="btn" type="submit">إضافة المبادرة</button></div></form></details>';
@@ -2200,6 +2219,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     else if(a.dataset.act === "video") makeVideo();
   });
   $("#progDetail").addEventListener("change", function(e){
+    if(e.target.dataset && e.target.dataset.evb !== undefined){ var eb = (PROG.evidence[curPid] || [])[+e.target.dataset.evb]; if(eb){ eb.ben = Math.max(0, +e.target.value || 0); saveStf(); } return; }
     var ec = e.target.dataset && (e.target.dataset.evc !== undefined || e.target.dataset.evn !== undefined);
     if(ec){ var ix = e.target.dataset.evc !== undefined ? +e.target.dataset.evc : +e.target.dataset.evn, ev = (PROG.evidence[curPid] || [])[ix];
       if(ev){ if(e.target.dataset.evc !== undefined) ev.cat = e.target.value; else ev.cnt = Math.max(1, +e.target.value || 1); saveStf(); } return; }
@@ -2232,7 +2252,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
         try{ fs = await uploadFiles(PEND[k]); }catch(err){ toast("تعذّر رفع الملفات"); if(btn) btn.disabled = false; return; }
         PEND[k] = [];
       }
-      if(f === "ev") arr(PROG.evidence, pid).push({t:v("evT"), dt:v("evDt"), d:v("evD"), url:safeUrl(v("evU")), ul:v("evUl"), pub:$("#evP").checked, cat:$("#evC").value, cnt:+$("#evN").value || 1, fs:fs});
+      if(f === "ev") arr(PROG.evidence, pid).push({t:v("evT"), dt:v("evDt"), d:v("evD"), url:safeUrl(v("evU")), ul:v("evUl"), pub:$("#evP").checked, cat:$("#evC").value, cnt:+$("#evN").value || 1, ben:+$("#evB").value || 0, fs:fs});
       else arr(PROG.initiatives, pid).push({t:v("inT"), st:v("inS"), d:v("inD"), type:v("inTy"), url:safeUrl(v("inU")), pub:$("#inP").checked, fs:fs});
       saveStf(); savePub();
     }
@@ -2296,9 +2316,10 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
 
   /* ---------- counselor dashboard ---------- */
   function dashTab(k){
-    ["inbox","book","scale","plist","parts","fup","surv","acc"].forEach(function(x){ $("#d-"+x).hidden = x !== k; });
+    ["inbox","book","scale","plist","parts","fup","surv","plan","acc"].forEach(function(x){ $("#d-"+x).hidden = x !== k; });
     if(k === "plist" && typeof plStats === "function") plStats();
     if(k === "acc" && typeof accLoad === "function") accLoad();
+    if(k === "plan" && typeof planDraw === "function") planDraw();
     $$("#dashTabs .tab").forEach(function(t){ t.setAttribute("aria-pressed", t.dataset.d === k); });
   }
   function dashDraw(){
@@ -2411,6 +2432,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     });
     onDoc("config/homeStats", function(sn){
       if(sn.exists && !isStaff && sn.data().tot !== undefined){ HSTTOT = sn.data().tot; HPROGS = sn.data().progs || []; }
+      if(sn.exists){ var hd = sn.data(); HSTBM = +hd.bm || 0; if(!isStaff) HSTBEN = +hd.ben || 0; if($("#hsBm")) $("#hsBm").value = HSTBM; reachDraw(); }
       if(sn.exists && sn.data().people && !isStaff){ PEOPLE = sn.data().people; peopleDraw(); }
       if(sn.exists && sn.data().items && sn.data().items.length){ HST = sn.data().items.map(function(x){ return {l:x.l, s:x.s || "", m:x.m || 0, n:x.n || 0, auto:x.a || [], ic:x.ic || "star"}; }); if(isStaff){ hstCalc(); } hstDraw(); }
     });
@@ -2427,7 +2449,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
       fupDraw();
     });
     onDoc("progStaff/main", function(sn){
-      if(sn.exists){ var d = sn.data(); PROG.evidence = d.evidence || {}; PROG.initiatives = d.initiatives || {}; PROG.media = d.media || {}; calcApps(); if(isStaff){ autoCatOnce(); hstCalc(); hstDraw(); hstSave(); } if(curPid) progDetail(); }
+      if(sn.exists){ var d = sn.data(); PROG.evidence = d.evidence || {}; PROG.initiatives = d.initiatives || {}; PROG.media = d.media || {}; PROG.plan = d.plan || []; calcApps(); if(typeof planDraw === "function") planDraw(); if(isStaff){ autoCatOnce(); hstCalc(); hstDraw(); hstSave(); } if(curPid) progDetail(); }
     });
     onColl("parts", function(sn){ PARTS = flat(sn).sort(function(a,b){ return b.id - a.id; }); refreshDash(); if(curPid) progDetail(); });
     inbox = []; bookings = []; scResults = []; PL = []; students = []; teachers = [];
@@ -2445,6 +2467,66 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     });
   })();
 
+  /* ---------- الزوار ---------- */
+  (function(){
+    function today(){ var d = new Date(); return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate(); }
+    function pull(){
+      if(!window.itzanAuth || !itzanAuth.rpc) return;
+      itzanAuth.rpc("visit_stats").then(function(r){ if(r && r.visitors !== undefined){ VIS = r; reachDraw(); } }, function(){});
+    }
+    var tries = 0, t = setInterval(function(){
+      tries++; if(tries > 40){ clearInterval(t); return; }
+      if(!DB || !myId) return; clearInterval(t);
+      if(!isStaff){
+        var seen = ""; try{ seen = sessionStorage.getItem("itzanVisit") || ""; }catch(e){}
+        if(seen !== today()){
+          DB.doc("visits/"+myId).get().then(function(d){
+            var o = d.exists ? d.data() : {}; var now = new Date().toISOString();
+            return DB.doc("visits/"+myId).set({first:o.first || now, last:now, n:(+o.n || 0) + 1});
+          }).then(function(){ try{ sessionStorage.setItem("itzanVisit", today()); }catch(e){} setTimeout(pull, 600); }, function(){ pull(); });
+        } else pull();
+      } else pull();
+      setInterval(pull, 120000);
+    }, 500);
+  })();
+
+  /* ---------- الخطة السنوية ---------- */
+  var PL_ST = ["لم يُنفَّذ بعد","نُفِّذ","مؤجَّل","أُلغي"];
+  function plCls(st){ return st === "نُفِّذ" ? "pl-done" : st === "أُلغي" ? "pl-no" : st === "مؤجَّل" ? "pl-post" : ""; }
+  function planDraw(){
+    var T = $("#plTable"); if(!T) return;
+    var P = PROG.plan || [];
+    var sel = $("#plP"); if(sel && sel.options.length < 2){ Object.keys(PIDS).forEach(function(k){ var o = document.createElement("option"); o.value = k; o.textContent = PIDS[k].t; sel.appendChild(o); }); }
+    var dn = P.filter(function(x){ return x.st === "نُفِّذ"; }).length;
+    $("#plSum").textContent = P.length ? "نُفِّذ "+arNum(dn)+" من "+arNum(P.length)+" ("+arNum(Math.round(dn*100/P.length))+"٪)" : "لم تُضف بنود بعد.";
+    T.innerHTML = '<thead><tr><th>البرنامج / الفعالية</th><th>الموعد المخطط</th><th>الفئة</th><th>الحالة</th><th>تاريخ التنفيذ</th><th>السبب / ملاحظات</th><th></th></tr></thead><tbody>'+
+      (P.length ? P.map(function(x,i){
+        return '<tr class="'+plCls(x.st)+'"><td><b>'+esc(x.t)+'</b>'+(x.pid && PIDS[x.pid] ? '<div class="hint">'+esc(PIDS[x.pid].t)+'</div>' : '')+'</td><td>'+esc(x.m || "")+'</td><td>'+esc(x.g || "")+'</td>'+
+        '<td><select class="pl-st" data-pl="st|'+i+'">'+PL_ST.map(function(o){ return '<option'+((x.st || PL_ST[0]) === o ? ' selected' : '')+'>'+o+'</option>'; }).join("")+'</select></td>'+
+        '<td><input type="text" style="width:110px" data-pl="dt|'+i+'" value="'+esc(x.dt || "")+'"></td>'+
+        '<td><input type="text" style="min-width:160px" data-pl="why|'+i+'" value="'+esc(x.why || "")+'"></td>'+
+        '<td><button class="x" type="button" data-pl-rm="'+i+'">حذف</button></td></tr>'; }).join("") : '<tr><td colspan="7" class="empty">أضيفي بنود الخطة السنوية.</td></tr>')+'</tbody>';
+  }
+  (function(){
+    var f = $("#plForm"); if(!f) return;
+    f.addEventListener("submit", function(e){
+      e.preventDefault(); if(!PROG.plan) PROG.plan = [];
+      PROG.plan.push({t:$("#plT").value.trim(), m:$("#plM").value.trim(), g:$("#plG").value.trim(), pid:$("#plP").value, st:PL_ST[0], dt:"", why:""});
+      f.reset(); saveStf(); planDraw(); toast("أُضيف إلى الخطة");
+    });
+    $("#plTable").addEventListener("change", function(e){
+      var k = e.target.dataset && e.target.dataset.pl; if(!k) return; var z = k.split("|"), it = (PROG.plan || [])[+z[1]]; if(!it) return;
+      it[z[0]] = e.target.value;
+      if(z[0] === "st" && it.st === "نُفِّذ" && !it.dt){ var d = new Date(); it.dt = d.toLocaleDateString("ar-SA-u-ca-islamic-umalqura", {year:"numeric", month:"numeric", day:"numeric"}); }
+      saveStf(); planDraw();
+    });
+    $("#plTable").addEventListener("click", function(e){
+      var b = e.target.closest("[data-pl-rm]"); if(!b) return;
+      if(!b.classList.contains("armed")){ b.classList.add("armed"); b.textContent = "تأكيد الحذف"; return; }
+      PROG.plan.splice(+b.dataset.plRm, 1); saveStf(); planDraw();
+    });
+  })();
+
   /* ---------- إحصائيات الرئيسية ---------- */
   // كل بند: l العنوان، s التفاصيل (اختياري)، m عدد يدوي يُضاف، n المحسوب النهائي (يُحفظ للزوار)
   var HST = [{l:"لقاءات الأمهات", s:"", m:0, n:0, ic:"family"}, {l:"استضافات خارجية", s:"", m:1, n:1, ic:"mic"}];
@@ -2452,6 +2534,8 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
   var AR = "٠١٢٣٤٥٦٧٨٩";
   function arNum(n){ return String(n).replace(/\d/g, function(d){ return "٠١٢٣٤٥٦٧٨٩"[+d]; }); }
   var ICONS = {
+    eye:["الزوار",'<path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.600 6.500-10 6.500S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>'],
+    people:["المستفيدات",'<circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.300 2.700-6 6-6s6 2.700 6 6"/><circle cx="17" cy="9" r="2.300"/><path d="M16 14.200c2.800.2 5 2.500 5 5.800"/>'],
     family:["الأسرة",'<circle cx="8" cy="8" r="2.5"/><circle cx="16.5" cy="8.5" r="2.2"/><circle cx="12.2" cy="13" r="1.8"/><path d="M3.5 19c0-3 2-5 4.5-5M20.5 19c0-2.6-1.6-4.6-4-5M8.5 20c0-2 1.5-3.5 3.7-3.5s3.7 1.5 3.7 3.5"/>'],
     mic:["استضافة",'<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0013 0M12 17.5V21M8.5 21h7"/>'],
     heart:["قلب",'<path d="M12 20s-7-4.4-7-10a4 4 0 017-2.6A4 4 0 0119 10c0 5.600-7 10-7 10z"/>'],
@@ -2470,8 +2554,17 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
   var PAL_ONE = true;
   function pst(i){ var c = PAL_ONE ? ["#CABED8","#4b3a6e"] : PAL[i % PAL.length]; return ' style="--f:'+c[0]+';--k:'+c[1]+'"'; }
   function evCats(){ return HST.map(function(x){ return x.l; }); }
+  var HSTBEN = 0, HSTBM = 0, VIS = null;
+  function reachDraw(){
+    var c = []; var tb = (+HSTBEN || 0) + (+HSTBM || 0);
+    if(VIS && VIS.visitors !== undefined) c.push(['<b>'+arNum(+VIS.visitors || 0)+'</b><strong>عدد الزوار</strong>'+(VIS.visits ? '<small>'+arNum(+VIS.visits)+' زيارة</small>' : ''), 'eye']);
+    if(tb > 0) c.push(['<b>'+arNum(tb)+'</b><strong>المستفيدات</strong>', 'people']);
+    var w = $('#hReach'); w.hidden = !c.length;
+    w.innerHTML = c.map(function(x,i){ return '<div class="hst"'+pst(i+3)+'><div class="ico">'+icoSvg(x[1])+'</div>'+x[0]+'</div>'; }).join('');
+  }
   function hstCalc(){
     var seen = {}, dc = 0; Object.keys(PROG.evidence).forEach(function(pid){ PROG.evidence[pid].forEach(function(e){ if(e.nc) return; var k = pid+'|'+String(e.t||'').replace(/\s+/g,' ').trim(); if(!seen[k]){ seen[k] = 1; dc++; } }); }); if(isStaff){ HSTTOT = dc; HPROGS = Object.keys(PIDS).map(function(pid){ var n = (PROG.evidence[pid] || []).filter(function(e){ return !e.nc; }).length; return {p:PIDS[pid].t, n:n}; }).filter(function(x){ return x.n > 0; }); }
+    var bsum = 0; Object.keys(PROG.evidence).forEach(function(pid){ PROG.evidence[pid].forEach(function(e){ bsum += (+e.ben || 0); }); }); if(isStaff){ HSTBEN = bsum; }
     HST.forEach(function(x){
       var cnt = 0, names = [];
       Object.keys(PROG.evidence).forEach(function(pid){ PROG.evidence[pid].forEach(function(e){
@@ -2491,8 +2584,8 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     if(!DB || !isStaff) return;
     hstCalc();
     var js = JSON.stringify(HST.map(function(x){ return {l:x.l, s:x.s||"", m:+x.m||0, n:x.n, a:x.auto||[], ic:x.ic||"star"}; }));
-    if(!force && (HSTTOT + js + JSON.stringify(HPROGS)) === hstLast) return; hstLast = HSTTOT + js + JSON.stringify(HPROGS);
-    var pr = DB.doc("config/homeStats").set({items:JSON.parse(js), people:PEOPLE || null, tot:HSTTOT, progs:HPROGS}); pr.catch(function(){}); return pr;
+    if(!force && (HSTTOT + js + JSON.stringify(HPROGS) + HSTBEN + '|' + HSTBM) === hstLast) return; hstLast = HSTTOT + js + JSON.stringify(HPROGS) + HSTBEN + '|' + HSTBM;
+    var pr = DB.doc("config/homeStats").set({items:JSON.parse(js), people:PEOPLE || null, tot:HSTTOT, progs:HPROGS, ben:HSTBEN, bm:HSTBM}); pr.catch(function(){}); return pr;
   }
   function evCatSelect(cur, attrs){
     return '<select '+attrs+'><option value="">بدون تصنيف</option>'+evCats().map(function(c){ return '<option'+(c === cur ? ' selected' : '')+'>'+esc(c)+'</option>'; }).join("")+'</select>';
@@ -2533,6 +2626,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
   $("#hsForm").addEventListener("submit", function(e){
     e.preventDefault();
     HST = HST.filter(function(x){ return x.l.trim(); }); hstCalc(); hstDraw();
+    HSTBM = Math.max(0, +$("#hsBm").value || 0); hstCalc(); reachDraw();
     var pr = hstSave(true);
     if(pr) pr.then(function(){ saveStf(); toast("تم حفظ الإحصائيات"); }, function(){ toast("تعذّر الحفظ"); }); else toast("تم التطبيق (بدون حفظ)");
   });
