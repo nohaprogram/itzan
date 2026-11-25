@@ -14,7 +14,7 @@
 
 ## التشغيل (مرة واحدة)
 1. **Supabase**: أنشئي مشروعًا مجانيًا على supabase.com.
-2. من **Authentication ← Sign In / Providers** فعّلي **Allow anonymous sign-ins**، وعطّلي **Allow new users to sign up**.
+2. من **Authentication ← Sign In / Providers** فعّلي **Allow anonymous sign-ins** (واتركي التسجيل الحر كما هو).
 3. افتحي **SQL Editor**، غيّري البريد في آخر `supabase.sql` إلى بريدك، ثم الصقي الملف كاملًا واضغطي Run.
 4. من **Authentication ← Users ← Add user**: أضيفي بريدك وكلمة سر، وفعّلي Auto Confirm User. كرّري لكل معلمة موكلة، ثم أضيفي بريدها في جدول `staff_emails`.
 5. من **Project Settings ← API** انسخي `Project URL` و`anon public` إلى `config.js`.
