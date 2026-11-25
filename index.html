@@ -428,6 +428,11 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
   <div class="grid" id="coreList"></div>
   <h3 class="section-title">برامج تنفذ حسب الاحتياج الخاص لكل مدرسة</h3>
   <div class="grid" id="schoolList"></div>
+  <div data-staff hidden class="card" style="margin-top:18px">
+    <h3 style="margin-bottom:6px">استيراد شواهد جاهزة</h3>
+    <p style="font-size:14px;color:var(--muted)">اختاري ملف الشواهد (evidence-import.zip) لإضافتها دفعة واحدة إلى البرامج.</p>
+    <input type="file" id="evZip" accept=".zip,application/zip"> <span id="evZipMsg" style="font-size:14px;color:var(--muted)"></span>
+  </div>
   </div>
   <div id="progDetail" hidden></div>
 </section>
@@ -1592,6 +1597,33 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
         : '<a href="'+esc(f.url)+'" target="_blank" rel="noopener"><img class="th" src="'+esc(f.url)+'" alt="'+esc(f.n||"")+'" loading="lazy"></a>';
     }).join("")+'</div>';
   }
+
+  $("#evZip").addEventListener("change", async function(){
+    var f = this.files[0], inp = this, m = $("#evZipMsg"); if(!f) return;
+    if(!ASSETS){ m.textContent = "رفع الملفات غير متاح لهذا الحساب."; return; }
+    try{
+      m.textContent = "جارٍ قراءة الملف…";
+      var z = await JSZip.loadAsync(f), data = JSON.parse(await z.file("evidence.json").async("string")), added = 0, skipped = 0, newItems = [];
+      for(var i = 0; i < data.items.length; i++){
+        var it = data.items[i], list = arr(PROG.evidence, it.pid);
+        if(list.some(function(x){ return x.t === it.t && x.dt === it.dt; }) || newItems.some(function(x){ return x.pid === it.pid && x.e.t === it.t && x.e.dt === it.dt; })){ skipped++; continue; }
+        var fs = [];
+        for(var j = 0; j < it.imgs.length; j++){
+          m.textContent = "رفع الصور: " + (i+1) + " من " + data.items.length + " (" + (j+1) + "/" + it.imgs.length + ")";
+          var blob = await z.file(it.imgs[j]).async("blob");
+          var file = new File([blob], it.imgs[j], {type:"image/jpeg"});
+          var r = await ASSETS.upload(file);
+          fs.push({id:r.id, url:r.url, t:r.contentType || "image/jpeg", n:it.imgs[j]});
+        }
+        newItems.push({pid:it.pid, e:{t:it.t, dt:it.dt, d:it.d, fs:fs}}); added++;
+      }
+      newItems.forEach(function(n){ var l = arr(PROG.evidence, n.pid); if(!l.some(function(x){ return x.t === n.e.t && x.dt === n.e.dt; })) l.push(n.e); });
+      saveStf();
+      m.textContent = "تم: أُضيف " + added + " شاهدًا" + (skipped ? " وتُخطّي " + skipped + " موجودًا مسبقًا" : "") + ".";
+      if(curPid) progDetail(); toast("تم استيراد الشواهد");
+    }catch(e){ m.textContent = "تعذّر الاستيراد: " + (e && e.message || ""); }
+    inp.value = "";
+  });
   function dropZone(key){
     if(!ASSETS) return '<div class="hint">رفع الصور والفيديوهات غير متاح لهذا الحساب.</div>';
     return '<div class="drop" data-drop="'+key+'"><div>اسحبي الصور والفيديوهات إلى هنا أو <label class="btn small ghost" style="cursor:pointer">اختيار ملفات<input type="file" multiple accept="image/*,video/*" data-pick="'+key+'" hidden></label></div><div class="hint" id="pend-'+key+'">'+pendText(key)+'</div></div>';
