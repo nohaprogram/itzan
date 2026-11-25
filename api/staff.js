@@ -14,7 +14,8 @@ module.exports = async (req, res) => {
   if (!tok) return J(res, 401, { error: "auth" });
   // التحقق أن المتصلة مرشدة
   const c = await fetch(URL_ + "/rest/v1/rpc/is_counselor", { method: "POST", headers: { apikey: ANON, Authorization: "Bearer " + tok, "Content-Type": "application/json" }, body: "{}" });
-  if (!c.ok || (await c.json()) !== true) return J(res, 403, { error: "not-counselor" });
+  if (!c.ok) return J(res, 500, { error: "rpc-failed", detail: c.status + " " + (await c.text()).slice(0, 200) });
+  if ((await c.json()) !== true) return J(res, 403, { error: "not-counselor" });
 
   const b = typeof req.body === "string" ? JSON.parse(req.body || "{}") : (req.body || {});
   const H = { apikey: SVC, Authorization: "Bearer " + SVC, "Content-Type": "application/json" };
@@ -22,7 +23,9 @@ module.exports = async (req, res) => {
 
   if (b.action === "list") {
     const r = await fetch(URL_ + "/rest/v1/staff_emails?select=email,role&order=email", { headers: H });
-    return J(res, 200, { list: await r.json() });
+    const t = await r.text();
+    if (!r.ok) return J(res, 500, { error: "list-failed", detail: r.status + " " + t.slice(0, 200) });
+    return J(res, 200, { list: JSON.parse(t) });
   }
   if (!emailOk(email)) return J(res, 400, { error: "bad-email" });
 

@@ -1995,7 +1995,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     var A = window.itzanAuth; if(!A || !A.token) throw new Error("no-auth");
     var r = await fetch("/api/staff", {method:"POST", headers:{"Content-Type":"application/json", Authorization:"Bearer "+(await A.token())}, body:JSON.stringify(o)});
     var d = await r.json().catch(function(){ return {}; });
-    if(!r.ok) throw new Error(d.error || "fail");
+    if(!r.ok){ var er = new Error(d.error || ("http-"+r.status)); er.detail = d.detail || ""; throw er; }
     return d;
   }
   async function accLoad(){
@@ -2003,7 +2003,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
       var d = await accCall({action:"list"});
       $("#accTable").innerHTML = '<thead><tr><th>البريد</th><th>الصلاحية</th><th></th></tr></thead><tbody>'+
         d.list.map(function(x){ return '<tr><td dir="ltr">'+esc(x.email)+'</td><td>'+(x.role==="teacher"?"معلمة":"مرشدة")+'</td><td><button class="btn" type="button" data-acc-rm="'+esc(x.email)+'">إزالة الصلاحية</button></td></tr>'; }).join("")+'</tbody>';
-    }catch(e){ $("#accTable").innerHTML = '<tbody><tr><td class="empty">'+esc(ACCERR[e.message] || "تعذّر تحميل الحسابات.")+'</td></tr></tbody>'; }
+    }catch(e){ $("#accTable").innerHTML = '<tbody><tr><td class="empty">'+esc(ACCERR[e.message] || "تعذّر تحميل الحسابات.")+'<br><small dir="ltr">'+esc(e.message+" "+(e.detail||""))+'</small></td></tr></tbody>'; }
   }
   $("#accForm").addEventListener("submit", async function(e){
     e.preventDefault(); var m = $("#accMsg"); m.textContent = "جارٍ الإضافة…";
