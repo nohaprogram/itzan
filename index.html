@@ -236,6 +236,14 @@ img{max-width:100%}
 :root{color-scheme:light}
 body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teacher #v-lists h3.section-title{display:none!important}
 .thw{display:inline-flex;flex-direction:column;gap:4px;align-items:center}.thw.off .th{opacity:.35}
+.hstats{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin:10px 0 22px}
+.hst{background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:16px;text-align:center}
+.hst b{display:block;font-size:38px;font-family:var(--f-display);line-height:1.2;color:var(--accent)}
+.hst strong{display:block;margin:2px 0}
+.hst small{display:block;color:var(--muted);font-size:13px;line-height:1.6}
+.hst.tot{background:var(--accent-soft)}
+.hsrow{display:grid;grid-template-columns:80px 1fr 2fr auto;gap:8px;margin-bottom:8px}
+@media(max-width:600px){.hsrow{grid-template-columns:1fr 1fr}}
 </style>
 </head>
 <body>
@@ -268,6 +276,13 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
       <p>نسمعك ونرافقك في دراستك وحياتك المدرسية. ابدئي من البطاقة التي تناسبك.</p>
     </div>
   </div>
+
+  <div class="sec-h"><div><div class="eyebrow">منجزات هذا العام</div><h2>البرامج المفعّلة</h2></div></div>
+  <div class="hstats" id="hStats"></div>
+  <details class="addbox" data-staff hidden><summary>تعديل الإحصائيات</summary>
+    <form class="form" id="hsForm"><div id="hsRows"></div>
+      <div><button class="btn small ghost" type="button" id="hsAdd">+ إضافة بند</button> <button class="btn" type="submit">حفظ</button></div></form>
+  </details>
 
   <div class="sec-h"><div><div class="eyebrow">ابدئي من هنا</div><h2>من أنتِ؟</h2></div></div>
   <div class="grid aud-grid">
@@ -2054,6 +2069,9 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
       BCFG = Object.assign({}, BCFG, c); applyBookCfg(); bcfgFill(); booked = {};
       onSlotsRefresh && onSlotsRefresh(); bookDraw(); if(!$("#psyMeet").hidden) meetDraw();
     });
+    onDoc("config/homeStats", function(sn){
+      if(sn.exists && sn.data().items && sn.data().items.length){ HST = sn.data().items; hstDraw(); }
+    });
     onDoc("config/scales", function(sn){
       if(sn.exists && sn.data().list && sn.data().list.length){ scales = sn.data().list; scalesDraw(); }
     });
@@ -2084,6 +2102,33 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
       renderList(); if(typeof scalesDraw === "function") scalesDraw();
     });
   })();
+
+  /* ---------- إحصائيات الرئيسية ---------- */
+  var HST = [{n:6, l:"لقاءات الأمهات", s:"جسور التواصل – مجالس الأمهات"},
+             {n:3, l:"استضافات خارجية", s:"نَفس يستحق الحياة · التوعية بسرطان الثدي · كأنك تراه"}];
+  var AR = "٠١٢٣٤٥٦٧٨٩";
+  function arNum(n){ return String(n).replace(/\d/g, function(d){ return AR[+d]; }); }
+  function hstDraw(){
+    var tot = HST.reduce(function(a,x){ return a + (+x.n || 0); }, 0);
+    $("#hStats").innerHTML = HST.map(function(x){ return '<div class="hst"><b>'+arNum(+x.n || 0)+'</b><strong>'+esc(x.l)+'</strong>'+(x.s?'<small>'+esc(x.s)+'</small>':'')+'</div>'; }).join("")+
+      (HST.length > 1 ? '<div class="hst tot"><b>'+arNum(tot)+'</b><strong>إجمالي البرامج المفعّلة</strong></div>' : '');
+    $("#hsRows").innerHTML = HST.map(function(x,i){ return '<div class="hsrow"><input type="number" min="0" data-hn="'+i+'" value="'+(+x.n||0)+'" aria-label="العدد"><input type="text" data-hl="'+i+'" value="'+esc(x.l)+'" aria-label="العنوان" placeholder="العنوان"><input type="text" data-hs="'+i+'" value="'+esc(x.s||"")+'" aria-label="التفاصيل" placeholder="التفاصيل (اختياري)"><button class="x" type="button" data-hd="'+i+'">حذف</button></div>'; }).join("");
+  }
+  hstDraw();
+  $("#hsAdd").addEventListener("click", function(){ HST.push({n:0, l:"", s:""}); hstDraw(); });
+  $("#hsRows").addEventListener("click", function(e){ var d = e.target.closest("[data-hd]"); if(!d) return; HST.splice(+d.dataset.hd, 1); hstDraw(); });
+  $("#hsRows").addEventListener("input", function(e){
+    var t = e.target, i;
+    if(t.dataset.hn !== undefined) HST[+t.dataset.hn].n = +t.value || 0;
+    else if(t.dataset.hl !== undefined) HST[+t.dataset.hl].l = t.value;
+    else if(t.dataset.hs !== undefined) HST[+t.dataset.hs].s = t.value;
+  });
+  $("#hsForm").addEventListener("submit", function(e){
+    e.preventDefault();
+    HST = HST.filter(function(x){ return x.l.trim(); }); hstDraw();
+    if(DB && isStaff) DB.doc("config/homeStats").set({items:HST}).then(function(){ toast("تم حفظ الإحصائيات"); }, function(){ toast("تعذّر الحفظ"); });
+    else toast("تم التطبيق (بدون حفظ)");
+  });
 
   /* ---------- حسابات الموظفات ---------- */
   var ACCERR = {"not-counselor":"هذه الصلاحية للمرشدة فقط.","bad-email":"البريد غير صحيح.","short-password":"كلمة المرور أقل من ٨ أحرف.","no-service-key":"لم يُضبط المفتاح السري في Vercel بعد.","create-failed":"تعذّر إنشاء الحساب.","self":"لا يمكن حذف حسابك."};
