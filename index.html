@@ -343,6 +343,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
   <div id="d-inbox">
 <div id="inboxPanel" data-staff hidden>
       <h3 style="margin-bottom:10px">الرسائل الواردة <span style="font-size:13px;color:var(--muted)">(عرض المرشدة)</span></h3>
+      <div style="margin-bottom:10px"><button class="btn small ghost" type="button" id="inboxDelDone" hidden></button></div>
       <div class="scroll"><table id="inboxTable"></table></div>
     </div>
   </div>
@@ -987,8 +988,10 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     $("#inboxTable").innerHTML = '<thead><tr><th>النوع</th><th>المرسِل</th><th>التفاصيل</th><th>الحالة</th></tr></thead><tbody>'+
       inbox.map(function(r){
         return '<tr><td>'+esc(r.k)+(r.k==="استشارة"?(r.ct?' · '+esc(r.ct):'')+' <span class="pill warn">خاصة</span>':'')+(r.u?' <span class="pill bad">عاجلة</span>':'')+'</td><td>'+esc(r.f)+(r.nm?'<div>'+esc(r.nm)+matchTag(r.nm)+'</div>':'')+'</td><td>'+esc(r.t)+(r.c?'<div style="font-size:13px;color:var(--muted)">التواصل المفضل: '+esc(r.c)+(r.m?' · الموعد: '+esc(r.m):'')+'</div>':'')+'</td><td><select data-ist="'+r.id+'" aria-label="حالة الرسالة">'+
-          INST.map(function(s){ return '<option'+(s===r.st?' selected':'')+'>'+s+'</option>'; }).join("")+'</select></td></tr>';
+          INST.map(function(s){ return '<option'+(s===r.st?' selected':'')+'>'+s+'</option>'; }).join("")+'</select><div style="margin-top:6px"><button class="x" type="button" data-idel="'+r.id+'" data-io="'+esc(r._o||"")+'">حذف</button></div></td></tr>';
       }).join("")+'</tbody>';
+    var done = inbox.filter(function(r){ return r.st === INST[2]; }).length;
+    var bd = $("#inboxDelDone"); if(bd){ bd.hidden = !done || !isCounselor; bd.textContent = "حذف الرسائل المعالَجة ("+arNum(done)+")"; bd.classList.remove("armed"); }
   }
   $("#inboxTable").addEventListener("change", function(e){
     var s = e.target.closest("[data-ist]"); if(!s) return;
@@ -2005,6 +2008,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
   function p2(n){ return (n < 10 ? "0" : "") + n; }
   function isoDay(d){ return d.getFullYear() + "-" + p2(d.getMonth()+1) + "-" + p2(d.getDate()); }
   function storeSlot(di, slot){ store("slots", isoDay(dayList[di]) + "|" + slot).catch(function(){}); }
+  function flatOwn(snap){ var o = []; snap.docs.forEach(function(d){ var x = d.data(); if(x && x.items) x.items.forEach(function(i){ var c = Object.assign({}, i); c._o = d.id; o.push(c); }); }); return o; }
   function flat(snap){ var o = []; snap.docs.forEach(function(d){ var x = d.data(); if(x && x.items) o = o.concat(x.items); }); return o; }
   function onColl(path, fn){ try{ DB.collection(path).onSnapshot(fn, function(){}); }catch(e){} }
   function onDoc(path, fn){ try{ DB.doc(path).onSnapshot(fn, function(){}); }catch(e){} }
@@ -2103,7 +2107,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     onColl("parts", function(sn){ PARTS = flat(sn).sort(function(a,b){ return b.id - a.id; }); refreshDash(); if(curPid) progDetail(); });
     inbox = []; bookings = []; scResults = []; students = []; teachers = [];
     inboxDraw(); bookDraw(); scTableDraw(); renderList();
-    onColl("inbox", function(sn){ inbox = flat(sn).sort(function(a,b){ return b.id - a.id; }); applyStatus(); inboxDraw(); refreshDash(); });
+    onColl("inbox", function(sn){ inbox = flatOwn(sn).sort(function(a,b){ return b.id - a.id; }); applyStatus(); inboxDraw(); refreshDash(); });
     onDoc("inboxStatus/main", function(sn){ statusMap = (sn.exists && sn.data().map) || {}; applyStatus(); inboxDraw(); refreshDash(); });
     onColl("bookings", function(sn){ bookings = flat(sn); bookDraw(); refreshDash(); });
     onColl("scaleResults", function(sn){ scResults = flat(sn).sort(function(a,b){ return b.id - a.id; }); scTableDraw(); refreshDash(); });
@@ -2121,7 +2125,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
   var HST = [{l:"لقاءات الأمهات", s:"", m:0, n:0, ic:"family"}, {l:"استضافات خارجية", s:"", m:1, n:1, ic:"mic"}];
   var hstLast = "";
   var AR = "٠١٢٣٤٥٦٧٨٩";
-  function arNum(n){ return String(n).replace(/\d/g, function(d){ return AR[+d]; }); }
+  function arNum(n){ return String(n).replace(/\d/g, function(d){ return "٠١٢٣٤٥٦٧٨٩"[+d]; }); }
   var ICONS = {
     family:["الأسرة",'<circle cx="8" cy="8" r="2.5"/><circle cx="16.5" cy="8.5" r="2.2"/><circle cx="12.2" cy="13" r="1.8"/><path d="M3.5 19c0-3 2-5 4.5-5M20.5 19c0-2.6-1.6-4.6-4-5M8.5 20c0-2 1.5-3.5 3.7-3.5s3.7 1.5 3.7 3.5"/>'],
     mic:["استضافة",'<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0013 0M12 17.5V21M8.5 21h7"/>'],
@@ -2209,11 +2213,35 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     var ch = false;
     Object.keys(PROG.evidence).forEach(function(pid){ PROG.evidence[pid].forEach(function(e){
       if(e.cat !== undefined) return;
-      if(/مجالس الأمهات/.test(e.t)){ e.cat = "لقاءات الأمهات"; var mm = /(\d+|[٠-٩]+)\s*مجالس/.exec(e.t); if(mm) e.cnt = +String(mm[1]).replace(/[٠-٩]/g, function(d){ return AR.indexOf(d); }); ch = true; }
+      if(/مجالس الأمهات/.test(e.t)){ e.cat = "لقاءات الأمهات"; var mm = /(\d+|[٠-٩]+)\s*مجالس/.exec(e.t); if(mm) e.cnt = +String(mm[1]).replace(/[٠-٩]/g, function(d){ return "٠١٢٣٤٥٦٧٨٩".indexOf(d); }); ch = true; }
       else if(/نَفس يستحق الحياة|الفحص المبكر/.test(e.t)){ e.cat = "استضافات خارجية"; ch = true; }
     }); });
     if(ch){ saveStf(); hstSave(); hstDraw(); }
   }
+
+  /* ---------- حذف الرسائل ---------- */
+  async function inboxRemove(pairs){
+    var by = {}; pairs.forEach(function(p){ (by[p.o] = by[p.o] || {})[p.id] = 1; });
+    for(var o in by){
+      var d = await DB.doc("inbox/"+o).get(), items = (d.exists && d.data().items) || [];
+      await DB.doc("inbox/"+o).set({items:items.filter(function(i){ return !by[o][i.id]; })});
+    }
+    pairs.forEach(function(p){ delete statusMap[p.id]; });
+    DB.doc("inboxStatus/main").set({map:statusMap}).catch(function(){});
+    inbox = inbox.filter(function(r){ return !pairs.some(function(p){ return p.id === r.id && p.o === r._o; }); });
+    inboxDraw(); refreshDash();
+  }
+  $("#inboxTable").addEventListener("click", async function(e){
+    var b = e.target.closest("[data-idel]"); if(!b || !DB || !isStaff || !isCounselor) return;
+    if(!b.classList.contains("armed")){ b.classList.add("armed"); b.textContent = "تأكيد الحذف؟"; setTimeout(function(){ if(b.isConnected){ b.classList.remove("armed"); b.textContent = "حذف"; } }, 4000); return; }
+    try{ await inboxRemove([{id:+b.dataset.idel, o:b.dataset.io}]); toast("تم حذف الرسالة"); }catch(err){ toast("تعذّر الحذف"); }
+  });
+  $("#inboxDelDone").addEventListener("click", async function(){
+    var b = this; if(!DB || !isStaff || !isCounselor) return;
+    if(!b.classList.contains("armed")){ b.classList.add("armed"); b.textContent = "تأكيد حذف كل المعالَجة؟"; setTimeout(function(){ if(b.isConnected && b.classList.contains("armed")) inboxDraw(); }, 4000); return; }
+    var pairs = inbox.filter(function(r){ return r.st === INST[2]; }).map(function(r){ return {id:r.id, o:r._o}; });
+    try{ await inboxRemove(pairs); toast("تم حذف الرسائل المعالَجة"); }catch(err){ toast("تعذّر الحذف"); }
+  });
 
   /* ---------- حسابات الموظفات ---------- */
   var ACCERR = {"not-counselor":"هذه الصلاحية للمرشدة فقط.","bad-email":"البريد غير صحيح.","short-password":"كلمة المرور أقل من ٨ أحرف.","no-service-key":"لم يُضبط المفتاح السري في Vercel بعد.","create-failed":"تعذّر إنشاء الحساب.","self":"لا يمكن حذف حسابك."};
