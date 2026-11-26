@@ -243,6 +243,15 @@ details.addbox form{background:transparent;padding:6px 0 0;margin:0}
 .dp-g button.sel{background:var(--brand);color:var(--brand-fg)}.dp-g button.sel small{color:var(--brand-fg)}
 .dp-bot{display:flex;gap:8px;margin-top:12px}
 .dp-bot button{flex:1;border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:999px;padding:9px;font:inherit;cursor:pointer}
+
+/* تغيير الرمز: زر صغير جانبي */
+#v-tforms{position:relative}
+#myCode{position:absolute;top:2px;inset-inline-end:0;margin:0!important;padding:0!important;border-radius:999px;width:auto;z-index:8;background:var(--surface)}
+#myCode summary{list-style:none;cursor:pointer;font-size:13px!important;font-weight:600;padding:6px 14px;color:var(--brand);display:block}
+#myCode summary::-webkit-details-marker{display:none}
+#myCode[open]{border-radius:18px;box-shadow:0 8px 28px rgba(40,30,70,.2)}
+#myCode form{padding:4px 14px 14px;width:220px;margin:0!important;gap:8px}
+#myCode input{padding:8px;min-height:0;width:100%;box-sizing:border-box}
 .toast{position:fixed;inset-inline:0;bottom:calc(16px + env(safe-area-inset-bottom,0px));display:flex;justify-content:center;pointer-events:none;z-index:20}
 .toast span{background:var(--fg);color:var(--bg);padding:10px 18px;border-radius:10px;font-size:15px;opacity:0;transition:opacity .2s}
 .toast.show span{opacity:1}
@@ -765,7 +774,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
 <section class="view" id="v-tforms" hidden>
   <div class="eyebrow">للمعلمات</div>
   <h2>نماذج المعلمات</h2>
-  <details class="card" id="myCode" data-tonly hidden style="margin:10px 0"><summary style="cursor:pointer;font-weight:600">تغيير رمز دخولي</summary>
+  <details class="card" id="myCode" data-tonly hidden><summary>تغيير رمزي</summary>
     <form class="form" id="myCodeForm" autocomplete="off" style="margin-top:10px">
       <label for="mcC">الرمز الجديد (٤ أرقام)<input type="password" id="mcC" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" required dir="ltr" style="letter-spacing:6px;text-align:center"></label>
       <div><button class="btn" type="submit">حفظ الرمز</button> <span id="mcMsg" style="font-size:14px;color:var(--muted)"></span></div>
@@ -2944,7 +2953,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
   if(mcf){
     mcf.addEventListener("submit", async function(e){
       e.preventDefault(); var m = $("#mcMsg");
-      try{ await tcall({action:"setcode", code:$("#mcC").value}, true); m.textContent = "تم حفظ رمزك الخاص. استخدميه في الدخول القادم."; $("#mcC").value = ""; try{ sessionStorage.removeItem("itzan.tfirst"); }catch(x){} }
+      try{ await tcall({action:"setcode", code:$("#mcC").value}, true); m.textContent = "تم حفظ رمزك الخاص. استخدميه في الدخول القادم."; $("#mcC").value = ""; setTimeout(function(){ var d = $("#myCode"); if(d) d.open = false; m.textContent = ""; toast("تم حفظ رمزك الخاص"); }, 1200); try{ sessionStorage.removeItem("itzan.tfirst"); }catch(x){} }
       catch(err){ m.textContent = TERR[err.message] || "تعذّر الحفظ."; }
     });
   }
