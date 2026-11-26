@@ -599,7 +599,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
   <div class="eyebrow">متابعة التحصيل الدراسي</div>
   <h2>قوائم الطالبات والمعلمات</h2>
   <p class="lead">أدخلي أسماء طالبات الصفوف الثلاثة والمعلمات لتُبنى عليها ملفات متابعة التحصيل.</p>
-  <div class="note">الأسماء الظاهرة بيانات تجريبية للعرض فقط. التعديلات تبقى في هذه الصفحة ولا تُحفظ بعد إغلاقها.</div>
+  <div class="note" id="listsDemo">الأسماء الظاهرة بيانات تجريبية للعرض فقط. التعديلات تبقى في هذه الصفحة ولا تُحفظ بعد إغلاقها.</div>
   <div class="tabs" id="listTabs" role="group" aria-label="اختيار القائمة"></div>
   <div class="toolbar">
     <input type="search" id="listSearch" placeholder="بحث بالاسم" aria-label="بحث بالاسم">
@@ -2527,7 +2527,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     if(DB && isStaff) DB.doc("config/scales").set({list:scales}).catch(function(){ toast("تعذّر حفظ المقياس"); });
   });
   function applyRole(){
-    $$("[data-staff]").forEach(function(el){ el.hidden = !isStaff; });
+    $$("[data-staff]").forEach(function(el){ el.hidden = !isStaff; }); var ld = $("#listsDemo"); if(ld) ld.hidden = !!(isStaff && window.itzanAuth && itzanAuth.on);
     document.body.classList.toggle("teacher", isStaff && !isCounselor); if(typeof tcShowMine === "function") tcShowMine();
     var nv = $('#nav a[href="#staff"], #nav a[href="#tforms"][data-tnav]');
     if(nv && isStaff && !isCounselor){ nv.setAttribute("href","#tforms"); nv.setAttribute("data-tnav","1"); nv.textContent = "نماذج المعلمات"; }
