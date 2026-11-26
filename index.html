@@ -384,6 +384,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     <button class="tab" type="button" data-d="fup" aria-pressed="false">نماذج المتابعة</button>
     <button class="tab" type="button" data-d="surv" aria-pressed="false">الاستبانات</button>
     <button class="tab" type="button" data-d="plan" aria-pressed="false">الخطة السنوية</button>
+    <button class="tab" type="button" data-d="part" aria-pressed="false">نموذج الشراكة</button>
     <button class="tab" type="button" data-d="acc" aria-pressed="false">حسابات الموظفات</button>
   </div>
   <div id="d-inbox">
@@ -486,6 +487,31 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
           <div><button class="btn" type="submit">إضافة</button></div>
         </form></details>
       <div class="scroll"><table id="plTable"></table></div>
+    </div>
+  </div>
+  <div id="d-part" hidden>
+    <div data-staff hidden>
+      <h3 class="section-title">نموذج الشراكة</h3>
+      <p class="hint">عبّئي بيانات الشراكة وأضيفي صور الشواهد، ثم أنزلي النموذج بصيغة Word. يُحفظ كل نموذج في القائمة أدناه.</p>
+      <form class="form card" id="ptForm">
+        <label for="ptN">النمط<input type="text" id="ptN" list="ptNL" placeholder="مثال: شراكة مجتمعية"></label>
+        <datalist id="ptNL"><option value="شراكة مجتمعية"><option value="شراكة مع جهة حكومية"><option value="شراكة مع القطاع الخاص"><option value="شراكة مع أفراد"></datalist>
+        <div class="row"><label for="ptT">مسمى الفعالية<input type="text" id="ptT" required></label>
+        <label for="ptD">تاريخ تنفيذ البرنامج<input type="text" id="ptD" placeholder="مثال: ١٤٤٨/٠٤/١٥"></label></div>
+        <div class="row"><label for="ptS">المرحلة<input type="text" id="ptS" value="الثانوية"></label>
+        <label for="ptR">المسؤولة المباشرة<input type="text" id="ptR" value="نهى الأحمدي"></label></div>
+        <div class="row"><label for="ptG">الجهة المشاركة<input type="text" id="ptG"></label>
+        <label for="ptA">الفئة المستهدفة<input type="text" id="ptA" placeholder="مثال: الطالبات"></label></div>
+        <div class="row"><label for="ptM">المشارك (للأفراد)<input type="text" id="ptM"></label>
+        <label for="ptJ">وظيفة المشارك (للأفراد)<input type="text" id="ptJ"></label></div>
+        <label for="ptC">مضمون الشراكة<textarea id="ptC" rows="5"></textarea></label>
+        <div><div class="hint">صور الشواهد</div>
+          <input type="file" id="ptF" accept="image/*" multiple> <span class="hint" id="ptFM"></span>
+          <div class="thumbs" id="ptTh"></div></div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn" type="submit" id="ptSave">حفظ النموذج</button><button class="btn ghost" type="button" id="ptNew" hidden>نموذج جديد</button></div>
+      </form>
+      <h3 class="section-title" style="margin-top:22px">النماذج المحفوظة</h3>
+      <div id="ptList"></div>
     </div>
   </div>
   <div id="d-acc" hidden>
@@ -1781,7 +1807,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
   }
 
   var TPL = null;
-  async function fillDocx(key, vals){
+  async function fillDocx(key, vals, imgs){
     if(!window.JSZip) throw new Error("jszip");
     if(!TPL){
       var r = await fetch("/templates.json"); if(!r.ok) throw new Error("template");
@@ -1800,6 +1826,20 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
       if(v == null || v === "") v = DEFS[t] || "";
       return esc(String(v));
     });
+    xml = xml.replace(/@@BR@@/g, '</w:t><w:br/><w:t xml:space="preserve">');
+    if(imgs && imgs.length && xml.indexOf("@@IMGS@@") > -1){
+      var rels = await zip.file("word/_rels/document.xml.rels").async("string"), ct = await zip.file("[Content_Types].xml").async("string"), runs = "", EMU = 360000;
+      if(ct.indexOf('Extension="jpeg"') < 0) ct = ct.replace("<Types ", "<Types ").replace(/(<Types[^>]*>)/, '$1<Default Extension="jpeg" ContentType="image/jpeg"/>');
+      imgs.forEach(function(im, n){
+        var rid = "rIdPh" + (n+1), nm = "word/media/ph" + (n+1) + ".jpeg", cx = Math.round(7.6 * EMU), cy = Math.round(7.6 * EMU * im.h / im.w);
+        if(cy > 9 * EMU){ cy = 9 * EMU; cx = Math.round(cy * im.w / im.h); }
+        zip.file(nm, im.bytes);
+        rels = rels.replace("</Relationships>", '<Relationship Id="'+rid+'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/ph'+(n+1)+'.jpeg"/></Relationships>');
+        runs += '<w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="'+cx+'" cy="'+cy+'"/><wp:docPr id="'+(900+n)+'" name="صورة '+(n+1)+'"/><a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="'+(900+n)+'" name="ph'+(n+1)+'"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="'+rid+'"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="'+cx+'" cy="'+cy+'"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r><w:r><w:t xml:space="preserve">  </w:t></w:r>';
+      });
+      xml = xml.replace(/<w:r(?: [^>]*)?>(?:(?!<\/w:r>)[\s\S])*@@IMGS@@(?:(?!<\/w:r>)[\s\S])*<\/w:r>/, runs);
+      zip.file("word/_rels/document.xml.rels", rels); zip.file("[Content_Types].xml", ct);
+    } else xml = xml.replace(/@@IMGS@@/g, "");
     zip.file("word/document.xml", xml);
     return zip.generateAsync({type:"uint8array", compression:"DEFLATE"});
   }
@@ -1938,7 +1978,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
   $("#pgGames").innerHTML = gameCards(Object.keys(GAMES));
 
   var PEND = {ev:[], ini:[]}, ASSETS = null;
-  var PROG = {plan:[], phrases:{}, games:{}, evidence:{}, initiatives:{}, media:{}, apps:{}, pubEv:{}}, PARTS = [], curPid = null, phIdx = 0, stTab = "ev";
+  var PROG = {plan:[], partners:[], phrases:{}, games:{}, evidence:{}, initiatives:{}, media:{}, apps:{}, pubEv:{}}, PARTS = [], curPid = null, phIdx = 0, stTab = "ev";
   var DEFP = {
     c0:["أنتِ جزء من هذه المدرسة، وبدايتك معنا بداية جميلة.","كل خطوة جديدة تبدأ بسؤال، ونحن هنا لنجيب."],
     c1:["أحلامك ترسم طريقك، فاختاري ما يشبهك.","اعرفي ميولك اليوم لتصنعي مستقبلك غدًا."],
@@ -1976,7 +2016,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
   function safeUrl(u){ u = String(u || "").trim(); return /^https?:\/\//i.test(u) ? u : ""; }
   var INI_TYPES = ["موقع إلكتروني","تطبيق","نشاط أو مبادرة ميدانية"];
   function savePub(){ calcApps(); if(DB && isStaff) DB.doc("config/progs").set({phrases:PROG.phrases, games:PROG.games, apps:PROG.apps, pubEv:PROG.pubEv}).catch(function(){ toast("تعذّر الحفظ"); }); }
-  function saveStf(){ if(DB && isStaff){ DB.doc("progStaff/main").set({evidence:PROG.evidence, initiatives:PROG.initiatives, media:PROG.media, plan:PROG.plan || []}).catch(function(){ toast("تعذّر الحفظ"); }); hstSave(); hstDraw(); } }
+  function saveStf(){ if(DB && isStaff){ DB.doc("progStaff/main").set({evidence:PROG.evidence, initiatives:PROG.initiatives, media:PROG.media, plan:PROG.plan || [], partners:PROG.partners || []}).catch(function(){ toast("تعذّر الحفظ"); }); hstSave(); hstDraw(); } }
   function rmBtn(k, pid, i){ return ' <button class="x" type="button" data-rm="'+k+'|'+pid+'|'+i+'">حذف</button>'; }
   var INI_ST = ["مخطّط","قيد التنفيذ","منفّذ"];
 
@@ -2335,10 +2375,11 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
 
   /* ---------- counselor dashboard ---------- */
   function dashTab(k){
-    ["inbox","book","scale","plist","parts","fup","surv","plan","acc"].forEach(function(x){ $("#d-"+x).hidden = x !== k; });
+    ["inbox","book","scale","plist","parts","fup","surv","plan","part","acc"].forEach(function(x){ $("#d-"+x).hidden = x !== k; });
     if(k === "plist" && typeof plStats === "function") plStats();
     if(k === "acc" && typeof accLoad === "function") accLoad();
     if(k === "plan" && typeof planDraw === "function") planDraw();
+    if(k === "part" && typeof partDraw === "function") partDraw();
     $$("#dashTabs .tab").forEach(function(t){ t.setAttribute("aria-pressed", t.dataset.d === k); });
   }
   function dashDraw(){
@@ -2468,7 +2509,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
       fupDraw();
     });
     onDoc("progStaff/main", function(sn){
-      if(sn.exists){ var d = sn.data(); PROG.evidence = d.evidence || {}; PROG.initiatives = d.initiatives || {}; PROG.media = d.media || {}; PROG.plan = d.plan || []; calcApps(); if(typeof planDraw === "function") planDraw(); if(isStaff){ autoCatOnce(); hstCalc(); hstDraw(); hstSave(); } if(curPid) progDetail(); }
+      if(sn.exists){ var d = sn.data(); PROG.evidence = d.evidence || {}; PROG.initiatives = d.initiatives || {}; PROG.media = d.media || {}; PROG.plan = d.plan || []; PROG.partners = d.partners || []; if(typeof partDraw === "function") partDraw(); calcApps(); if(typeof planDraw === "function") planDraw(); if(isStaff){ autoCatOnce(); hstCalc(); hstDraw(); hstSave(); } if(curPid) progDetail(); }
     });
     onColl("parts", function(sn){ PARTS = flat(sn).sort(function(a,b){ return b.id - a.id; }); refreshDash(); if(curPid) progDetail(); });
     inbox = []; bookings = []; scResults = []; PL = []; students = []; teachers = [];
@@ -2507,6 +2548,74 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
       } else pull();
       setInterval(pull, 120000);
     }, 500);
+  })();
+
+  /* ---------- نموذج الشراكة ---------- */
+  var PT_EDIT = null, PT_PH = [];
+  function ptPhDraw(){
+    $("#ptTh").innerHTML = PT_PH.map(function(f, j){ return '<div class="thw"><a href="'+esc(f.url)+'" target="_blank" rel="noopener"><img class="th" src="'+esc(f.url)+'" alt=""></a><button class="btn small ghost" type="button" data-pt-rmph="'+j+'">حذف</button></div>'; }).join("");
+  }
+  function ptReset(){ PT_EDIT = null; PT_PH = []; $("#ptForm").reset(); $("#ptS").value = "الثانوية"; $("#ptR").value = "نهى الأحمدي"; $("#ptNew").hidden = true; $("#ptSave").textContent = "حفظ النموذج"; ptPhDraw(); }
+  var PT_F = {n:"#ptN", t:"#ptT", d:"#ptD", s:"#ptS", r:"#ptR", g:"#ptG", a:"#ptA", m:"#ptM", j:"#ptJ", c:"#ptC"};
+  function partDraw(){
+    var L = $("#ptList"); if(!L) return; var P = PROG.partners || [];
+    L.innerHTML = P.length ? P.map(function(x, i){ return '<div class="card" style="margin-bottom:10px"><b>'+esc(x.t)+'</b>'+(x.d ? ' · '+esc(x.d) : '')+'<div class="hint">'+esc(x.n || "")+(x.g ? ' · '+esc(x.g) : '')+' · '+arNum((x.ph || []).length)+' صورة</div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button class="btn small" type="button" data-pt-dl="'+i+'">تنزيل Word</button><button class="btn small ghost" type="button" data-pt-ed="'+i+'">تعديل</button><button class="x" type="button" data-pt-rm="'+i+'">حذف</button></div></div>'; }).join("") : '<p class="hint">لا توجد نماذج محفوظة بعد.</p>';
+  }
+  async function ptImages(ph){
+    var out = [];
+    for(var i = 0; i < (ph || []).length; i++){
+      try{
+        var bl = await (await fetch(ph[i].url)).blob(), bm = await createImageBitmap(bl), k = Math.min(1, 1100 / Math.max(bm.width, bm.height)), cv = document.createElement("canvas");
+        cv.width = Math.round(bm.width * k); cv.height = Math.round(bm.height * k); cv.getContext("2d").drawImage(bm, 0, 0, cv.width, cv.height);
+        var jb = await new Promise(function(r){ cv.toBlob(r, "image/jpeg", 0.85); });
+        out.push({bytes:new Uint8Array(await jb.arrayBuffer()), w:cv.width, h:cv.height});
+      }catch(e){}
+    }
+    return out;
+  }
+  async function ptDownload(x){
+    var v = {pn:x.n, pt:x.t, pd:x.d, ps:x.s, pr:x.r, pg:x.g, pa:x.a, pm:x.m, pj:x.j, pc:String(x.c || "").replace(/\r?\n/g, "@@BR@@"), IMGS:"@@IMGS@@"};
+    try{
+      var dl = (window.claude && window.claude.use) ? await window.claude.use("downloads") : null;
+      if(!dl){ toast("تعذّر التنزيل في هذا المتصفح"); return; }
+      toast("جارٍ تجهيز الملف…");
+      var data = await fillDocx("form5", v, await ptImages(x.ph));
+      await dl.save({filename:"نموذج الشراكة - " + String(x.t || "").slice(0, 40) + ".docx", data:data});
+      toast("تم تنزيل الملف");
+    }catch(e){ if(e && e.code === "declined") return; toast("تعذّر تجهيز الملف، حاولي مرة أخرى"); }
+  }
+  (function(){
+    var f = $("#ptForm"); if(!f) return;
+    $("#ptF").addEventListener("change", async function(){
+      var fl = Array.prototype.slice.call(this.files), inp = this; if(!fl.length) return;
+      if(!ASSETS){ $("#ptFM").textContent = "رفع الصور غير متاح لهذا الحساب."; return; }
+      for(var i = 0; i < fl.length; i++){
+        $("#ptFM").textContent = "رفع الصور: " + (i+1) + " من " + fl.length;
+        try{ var r = await ASSETS.upload(fl[i]); PT_PH.push({id:r.id, url:r.url}); }catch(e){ toast("تعذّر رفع " + fl[i].name); }
+      }
+      $("#ptFM").textContent = ""; inp.value = ""; ptPhDraw();
+    });
+    f.addEventListener("submit", function(e){
+      e.preventDefault(); if(!PROG.partners) PROG.partners = [];
+      var o = {id:PT_EDIT ? PT_EDIT.id : nid(), ph:PT_PH.slice(), ts:PT_EDIT ? PT_EDIT.ts : Date.now()};
+      Object.keys(PT_F).forEach(function(k){ o[k] = $(PT_F[k]).value.trim(); });
+      if(PT_EDIT){ var ix = PROG.partners.findIndex(function(z){ return z.id === PT_EDIT.id; }); if(ix > -1) PROG.partners[ix] = o; else PROG.partners.unshift(o); } else PROG.partners.unshift(o);
+      saveStf(); partDraw(); toast("حُفظ النموذج"); ptReset();
+    });
+    $("#ptNew").addEventListener("click", ptReset);
+    $("#d-part").addEventListener("click", function(e){
+      var t = e.target, b;
+      if((b = t.closest("[data-pt-rmph]"))){ PT_PH.splice(+b.dataset.ptRmph, 1); ptPhDraw(); return; }
+      if((b = t.closest("[data-pt-dl]"))){ ptDownload(PROG.partners[+b.dataset.ptDl]); return; }
+      if((b = t.closest("[data-pt-ed]"))){
+        var x = PROG.partners[+b.dataset.ptEd]; if(!x) return; PT_EDIT = x; PT_PH = (x.ph || []).slice();
+        Object.keys(PT_F).forEach(function(k){ $(PT_F[k]).value = x[k] || ""; }); ptPhDraw(); $("#ptNew").hidden = false; $("#ptSave").textContent = "حفظ التعديل"; f.scrollIntoView(); return;
+      }
+      if((b = t.closest("[data-pt-rm]"))){
+        if(!b.classList.contains("armed")){ b.classList.add("armed"); b.textContent = "تأكيد الحذف"; return; }
+        PROG.partners.splice(+b.dataset.ptRm, 1); saveStf(); partDraw();
+      }
+    });
   })();
 
   /* ---------- الخطة السنوية ---------- */
