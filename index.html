@@ -953,26 +953,33 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
   /* ---------- lists ---------- */
   var STATUS = ["متفوقة","مستقرة","تحتاج متابعة"];
   var students = [
-    {id:1,g:1,cls:"1\u200F/\u200F1",n:"سارة العتيبي",s:"متفوقة"},{id:2,g:1,cls:"1\u200F/\u200F1",n:"لمى الغامدي",s:"مستقرة"},
-    {id:3,g:1,cls:"1\u200F/\u200F2",n:"رهف الزهراني",s:"تحتاج متابعة"},{id:4,g:2,cls:"2\u200F/\u200F1",n:"جود القحطاني",s:"مستقرة"},
-    {id:5,g:2,cls:"2\u200F/\u200F2",n:"ديما الحربي",s:"متفوقة"},{id:6,g:2,cls:"2\u200F/\u200F2",n:"ريم السلمي",s:"تحتاج متابعة"},
-    {id:7,g:3,cls:"3\u200F/\u200F1",n:"نوف المالكي",s:"مستقرة"},{id:8,g:3,cls:"3\u200F/\u200F1",n:"هيا الشهري",s:"متفوقة"},
-    {id:9,g:3,cls:"3\u200F/\u200F2",n:"غدير البقمي",s:"تحتاج متابعة"}
+    {id:1,g:1,cls:"أولى 1",n:"سارة العتيبي",s:"متفوقة"},{id:2,g:1,cls:"أولى 1",n:"لمى الغامدي",s:"مستقرة"},
+    {id:3,g:1,cls:"أولى 2",n:"رهف الزهراني",s:"تحتاج متابعة"},{id:4,g:2,cls:"ثاني عام 1",n:"جود القحطاني",s:"مستقرة"},
+    {id:5,g:2,cls:"ثاني عام 2",n:"ديما الحربي",s:"متفوقة"},{id:6,g:2,cls:"ثاني عام 2",n:"ريم السلمي",s:"تحتاج متابعة"},
+    {id:7,g:3,cls:"ثالث عام 1",n:"نوف المالكي",s:"مستقرة"},{id:8,g:3,cls:"ثالث عام 1",n:"هيا الشهري",s:"متفوقة"},
+    {id:9,g:3,cls:"ثالث عام 2",n:"غدير البقمي",s:"تحتاج متابعة"}
   ];
   var teachers = [
-    {id:21,n:"أ. منى الشريف",sub:"الرياضيات",cls:"1\u200F/\u200F1، 1\u200F/\u200F2"},
-    {id:22,n:"أ. هند العمري",sub:"اللغة العربية",cls:"2\u200F/\u200F1، 2\u200F/\u200F2"},
-    {id:23,n:"أ. أمل الدوسري",sub:"الأحياء",cls:"3\u200F/\u200F1، 3\u200F/\u200F2"}
+    {id:21,n:"أ. منى الشريف",sub:"الرياضيات",cls:"أولى 1، أولى 2"},
+    {id:22,n:"أ. هند العمري",sub:"اللغة العربية",cls:"ثاني عام 1، ثاني عام 2"},
+    {id:23,n:"أ. أمل الدوسري",sub:"الأحياء",cls:"ثالث عام 1، ثالث عام 2"}
   ];
-  /* توحيد كتابة الفصل: الصف ثم رقم الفصل، مثل 1/1 و1/2 و1/3 */
-  var SEC = {"أ":1,"ا":1,"ب":2,"ج":3,"د":4,"هـ":5,"ه":5};
+  /* الفصول المعتمدة في المدرسة */
+  var CLASSES = [["أولى 1",1],["أولى 2",1],["أولى 3",1],["ثاني عام 1",2],["ثاني عام 2",2],["ثالث عام 1",3],["ثالث عام 2",3],["ثالث حاسب وهندسة",3],["ثالث إدارة أعمال",3]];
+  var GNAME = {1:"أولى", 2:"ثاني", 3:"ثالث"};
+  var SEC = {"أ":1,"ا":1,"ب":2,"ج":3};
   function lat(x){ return String(x).replace(/[٠-٩]/g, function(c){ return c.charCodeAt(0) - 1632; }); }
-  var RLM = "\u200F";
+  function mkCls(g, sec){
+    sec = String(sec).trim(); if(SEC[sec] !== undefined) sec = SEC[sec];
+    if(!GNAME[g]) return String(g) + "/" + sec;
+    if(/^\d$/.test(String(sec))) return g === 1 ? "أولى " + sec : GNAME[g] + " عام " + sec;
+    return GNAME[g] + " " + sec;
+  }
   function ncls(c){
-    var m = lat(c == null ? "" : c).replace(/[\u200E\u200F]/g, "").trim().match(/^(\d)\s*[\/\-\\]\s*(\S+)$/);
-    if(!m) return String(c == null ? "" : c).trim();
-    var sec = SEC[m[2]] !== undefined ? SEC[m[2]] : m[2];
-    return m[1] + RLM + "/" + RLM + sec;   /* الصف من اليمين ثم / ثم رقم الفصل */
+    var t = lat(c == null ? "" : c).replace(/[\u200E\u200F]/g, "").trim();
+    var m = t.match(/^(\d)\s*[\/\-\\]\s*(\S.*)$/);
+    if(m) return mkCls(+m[1], m[2]);
+    return t.replace(/^اولى/, "أولى").replace(/^الأول(ى)?\s*/, "أولى ").replace(/\s+/g, " ");
   }
   function nclsList(c){ return String(c || "").split(/\s*[،,]\s*/).filter(Boolean).map(ncls).join("، "); }
   function normPeople(){
@@ -1014,10 +1021,10 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     if(listKey === "t"){
       f.innerHTML = '<div class="row"><label for="aN">اسم المعلمة<input type="text" id="aN" required></label>'+
         '<label for="aS">المهمة أو المادة<input type="text" id="aS" required placeholder="مثال: وكيلة، أو الرياضيات"></label>'+
-        '<label for="aC">الفصول<input type="text" id="aC" placeholder="مثال: 1/1، 1/2"></label></div><div><button class="btn" type="submit">إضافة المعلمة</button></div>';
+        '<label for="aC">الفصول<input type="text" id="aC" placeholder="مثال: أولى 1، ثالث عام 2"></label></div><div><button class="btn" type="submit">إضافة المعلمة</button></div>';
     } else {
       f.innerHTML = '<div class="row"><label for="aN">اسم الطالبة<input type="text" id="aN" required></label>'+
-        '<label for="aC">الفصل<input type="text" id="aC" placeholder="مثال: '+listKey+'/1" required></label>'+
+        '<label for="aC">الفصل<select id="aC" required><option value="">اختاري الفصل</option>'+CLASSES.filter(function(c){ return String(c[1]) === listKey; }).map(function(c){ return '<option>'+c[0]+'</option>'; }).join("")+'</select></label>'+
         '<label for="aS">المادة المتعثر فيها (إن وُجدت)<input type="text" id="aS" placeholder="اتركيه فارغًا إن لم تكن متعثرة"></label></div>'+
         '<div><button class="btn" type="submit">إضافة إلى '+LISTNAMES[listKey]+'</button></div>';
     }
@@ -1074,7 +1081,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
       var f = line.split(/[,،;\t]/).map(function(x){ return x.trim(); });
       var g = parseGrade(f[1]);
       if(!f[0] || !g){ bad++; return; }
-      var c = f[2] ? ncls(g + "/" + f[2]) : String(g);
+      var c = f[2] ? mkCls(g, f[2]) : (GNAME[g] || String(g));
       if(!students.some(function(x){ return nrm(x.n) === nrm(f[0]) && x.g === g; })){ students.push({id:nid(), g:g, cls:c, n:f[0], s:""}); n++; }
     });
     $("#impText").value = ""; listKey = "1"; renderTabs(); renderAddForm(); renderList(); saveLists();
@@ -1808,8 +1815,8 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
   function renderTop(){
     $("#tfTeacher").value = S.T.teacher; $("#tfSubject").value = S.T.subject;
     $("#tfTeachers").innerHTML = teachers.map(function(t){ return '<option value="'+ea(t.n)+'">'; }).join("");
-    var cl = {}; students.forEach(function(x){ if(x.cls) cl[x.cls] = x.g || 0; });
-    var keys = Object.keys(cl).sort(function(a, b){ return cl[a] - cl[b] || (a < b ? -1 : 1); }), sel = S.T.classes || [];
+    var keys = CLASSES.map(function(c){ return c[0]; }), sel = S.T.classes || [];
+    students.forEach(function(x){ if(x.cls && keys.indexOf(x.cls) < 0) keys.push(x.cls); });
     var n = students.filter(function(x){ return sel.indexOf(x.cls) >= 0; }).length;
     $("#tfCls").innerHTML = keys.length ? '<div class="sub-h">الفصول التي تدرّسينها <span class="hint">(اختاري فصولك فتظهر طالباتها فقط في القوائم)</span></div><div class="chips">'+
       keys.map(function(k){ return '<button type="button" class="tg" data-cls="'+ea(k)+'" aria-pressed="'+(sel.indexOf(k) >= 0)+'">'+ea(k)+'</button>'; }).join("")+
@@ -1941,8 +1948,8 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
         var t = teachers.filter(function(x){ return x.n === el.value; })[0];
         if(t && !S.T.subject){ S.T.subject = t.sub; $("#tfSubject").value = t.sub; }
         if(t && t.cls && !(S.T.classes || []).length){
-          var have = {}; students.forEach(function(x){ have[x.cls] = 1; });
-          pre = String(t.cls).split(/\s*[،,]\s*/).map(function(x){ return x.trim(); }).filter(function(x){ return have[x]; });
+          var have = {}; CLASSES.forEach(function(c){ have[c[0]] = 1; }); students.forEach(function(x){ have[x.cls] = 1; });
+          pre = nclsList(t.cls).split(/\s*[،,]\s*/).map(function(x){ return x.trim(); }).filter(function(x){ return have[x]; });
           if(pre.length){ S.T.classes = pre; S.T.all = false; tfRedrawAll(); }
         }
       }
