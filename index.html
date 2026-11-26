@@ -798,9 +798,11 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
   <div class="tabs" id="tfTabs" role="group" aria-label="اختيار النموذج" style="margin-top:16px">
     <button class="tab" type="button" data-t="weekly" aria-pressed="true">البيان الأسبوعي للمقصرات</button>
     <button class="tab" type="button" data-t="plan" aria-pressed="false">سجل الخطة العلاجية</button>
+    <button class="tab" type="button" data-t="honor" aria-pressed="false">المتفوقات والمتحسنات</button>
   </div>
   <div id="tfWeekly"></div>
   <div id="tfPlan" hidden></div>
+  <div id="tfHonor" hidden></div>
 </section>
 
 <!-- الحجز -->
@@ -1716,7 +1718,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
       procs:PROC.map(function(){ return {on:false, time:"", st:"", why:""}; }), procOther:"",
       fu:[1,2,3].map(function(){ return {date:"", lv:"", res:""}; }), imp:"auto"};
   }
-  var S = {T:{teacher:"", subject:"", classes:[], all:false}, w:{term:"الأول", week:"", date:hdate(), rows:[newRow()]}, p:freshPlan()};
+  var S = {T:{teacher:"", subject:"", classes:[], all:false}, w:{term:"الأول", week:"", date:hdate(), rows:[newRow()]}, p:freshPlan(), h:{term:"الأول", date:hdate(), top:[], imp:[]}};
   try{
     var sv = JSON.parse(localStorage.getItem("itizan-teacher") || "{}");
     if(sv.teacher) S.T.teacher = sv.teacher; if(sv.subject) S.T.subject = sv.subject; if(sv.classes && sv.classes.length) S.T.classes = sv.classes.map(ncls); S.T.all = !!sv.all;
@@ -1832,10 +1834,90 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
       (sel.length ? '<button type="button" class="tg sm" data-clsall="1" aria-pressed="'+(!!S.T.all)+'">عرض كل الطالبات</button>' : '')+'</div>'+
       (sel.length ? '<div class="hint" style="margin-top:6px">'+sel.length+' فصل · '+n+' طالبة'+(S.T.all ? ' (القائمة تعرض الجميع الآن)' : '')+'</div>' : '') : '<div class="hint">تظهر هنا فصول المدرسة بعد إضافة قوائم الطالبات.</div>';
   }
-  function tfRedrawAll(){ saveTeacher(); renderTop(); renderWeekly(); renderPlan(); }
+  function tfRedrawAll(){ saveTeacher(); renderTop(); renderWeekly(); renderPlan(); renderHonor(); }
+  /* المتفوقات والمتحسنات */
+  var RF = ["شهادة شكر","تعزيز معنوي أمام الزميلات","هدية رمزية","إذاعة مدرسية","رسالة لولي الأمر","لوحة الشرف"];
+  function hdiff(r){
+    var a = parseFloat(lat(r.prev || "")), b = parseFloat(lat(r.cur || ""));
+    if(isNaN(a) || isNaN(b)) return {n:null, txt:"—"};
+    var d = Math.round((b - a) * 100) / 100;
+    return {n:d, txt:(d > 0 ? "+" : "") + d};
+  }
+  function renderHonor(){
+    var h = S.h, o = '';
+    o += '<div class="card form"><div class="row"><label for="hTerm">الفصل الدراسي<select id="hTerm" data-bind="h.term">'+["الأول","الثاني","الثالث"].map(function(t){ return '<option'+(t===h.term?' selected':'')+'>'+t+'</option>'; }).join("")+'</select></label>'+
+      inp("hDate","h.date","التاريخ (هجري)",h.date,"يوم / شهر / سنة")+'</div></div>';
+    o += '<h3 class="section-title">المتفوقات <span class="hint">(الحاصلات على الدرجة الكاملة في المادة)</span></h3>';
+    h.top.forEach(function(r, i){
+      var s = stu(r.sid), p = "h.top."+i;
+      o += '<div class="stu"><div class="stu-head"><span class="stu-num">'+(i+1)+'</span>'+stuSelect("hT"+i, p+".sid", r.sid)+(s ? '<span class="chip">'+ea(s.cls)+'</span>' : '')+
+        '<button type="button" class="x" data-act="hdel" data-k="top" data-i="'+i+'">حذف</button></div>'+
+        '<div class="row">'+inp("hTS"+i, p+".subj", "المادة", r.subj, "مثال: الرياضيات", ' list="tfSubjects"')+inp("hTF"+i, p+".full", "الدرجة الكاملة", r.full, "مثال: 100", ' inputmode="decimal"')+'</div></div>';
+    });
+    o += '<div class="actions"><button type="button" class="btn ghost" data-act="hadd" data-k="top">+ إضافة متفوقة</button></div>';
+    o += '<h3 class="section-title">المتحسنات <span class="hint">(تحسّنت درجتها عن السابقة، لتعزيزها)</span></h3>';
+    h.imp.forEach(function(r, i){
+      var s = stu(r.sid), p = "h.imp."+i, d = hdiff(r);
+      o += '<div class="stu"><div class="stu-head"><span class="stu-num">'+(i+1)+'</span>'+stuSelect("hI"+i, p+".sid", r.sid)+(s ? '<span class="chip">'+ea(s.cls)+'</span>' : '')+
+        '<button type="button" class="x" data-act="hdel" data-k="imp" data-i="'+i+'">حذف</button></div>'+
+        '<div class="row">'+inp("hIS"+i, p+".subj", "المادة", r.subj, "مثال: الرياضيات", ' list="tfSubjects"')+
+        inp("hIP"+i, p+".prev", "الدرجة السابقة", r.prev, "", ' inputmode="decimal" data-hd="'+i+'"')+
+        inp("hIC"+i, p+".cur", "الدرجة الحالية", r.cur, "", ' inputmode="decimal" data-hd="'+i+'"')+
+        '<label>مقدار التحسّن<span class="hdv" id="hd'+i+'" style="display:block;padding:10px 4px;font-weight:700">'+d.txt+'</span></label></div>'+
+        inp("hIR"+i, p+".rf", "التعزيز المقدَّم", r.rf, "اكتبي أو اختاري من الخيارات")+
+        '<div class="chips">'+RF.map(function(t){ return '<button type="button" class="tg sm" data-add="'+p+'.rf" data-text="'+ea(t)+'">'+ea(t)+'</button>'; }).join("")+'</div></div>';
+    });
+    o += '<div class="actions"><button type="button" class="btn ghost" data-act="hadd" data-k="imp">+ إضافة متحسنة</button>'+
+      '<button type="button" class="btn" data-act="dl-honor">تنزيل البيان بصيغة Word</button></div>'+
+      '<p class="hint" style="margin-top:8px">الصفحة لا تحفظ ما تكتبينه بعد إغلاقها، فنزّلي الملف عند الانتهاء.</p>';
+    $("#tfHonor").innerHTML = o;
+  }
+  function wx(t){ return String(t == null ? "" : t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+  function wp(t, o){ o = o || {};
+    return '<w:p><w:pPr><w:bidi/>'+(o.c ? '<w:jc w:val="center"/>' : '')+'<w:spacing w:before="'+(o.sb||40)+'" w:after="'+(o.sa||40)+'"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:cs="Arial"/>'+(o.b ? '<w:b/><w:bCs/>' : '')+'<w:sz w:val="'+(o.z||24)+'"/><w:szCs w:val="'+(o.z||24)+'"/><w:rtl/><w:lang w:bidi="ar-SA"/></w:rPr><w:t xml:space="preserve">'+wx(t)+'</w:t></w:r></w:p>'; }
+  function wt(widths, rows){
+    var bd = '<w:top w:val="single" w:sz="4" w:color="7a6aa8"/><w:left w:val="single" w:sz="4" w:color="7a6aa8"/><w:bottom w:val="single" w:sz="4" w:color="7a6aa8"/><w:right w:val="single" w:sz="4" w:color="7a6aa8"/><w:insideH w:val="single" w:sz="4" w:color="7a6aa8"/><w:insideV w:val="single" w:sz="4" w:color="7a6aa8"/>';
+    var x = '<w:tbl><w:tblPr><w:tblW w:w="'+widths.reduce(function(a,b){return a+b;},0)+'" w:type="dxa"/><w:jc w:val="center"/><w:bidiVisual/><w:tblBorders>'+bd+'</w:tblBorders><w:tblLayout w:type="fixed"/><w:tblCellMar><w:left w:w="70" w:type="dxa"/><w:right w:w="70" w:type="dxa"/></w:tblCellMar></w:tblPr><w:tblGrid>'+widths.map(function(w){ return '<w:gridCol w:w="'+w+'"/>'; }).join("")+'</w:tblGrid>';
+    rows.forEach(function(r, ri){
+      x += '<w:tr><w:trPr><w:cantSplit/>'+(ri === 0 ? '<w:tblHeader/>' : '')+'</w:trPr>'+r.map(function(c, ci){
+        return '<w:tc><w:tcPr><w:tcW w:w="'+widths[ci]+'" w:type="dxa"/><w:vAlign w:val="center"/>'+(ri === 0 ? '<w:shd w:val="clear" w:color="auto" w:fill="E6E0F3"/>' : '')+'</w:tcPr>'+wp(c, {c:true, b:ri === 0, z:ri === 0 ? 22 : 22, sb:50, sa:50})+'</w:tc>'; }).join("")+'</w:tr>';
+    });
+    return x + '</w:tbl>';
+  }
+  async function honorDocx(){
+    if(!window.JSZip) throw new Error("jszip");
+    var h = S.h, T = S.T, body = '';
+    body += wp("مدارس الذكر للبنات – المرحلة الثانوية", {c:true, b:true, z:28});
+    body += wp("بيان الطالبات المتفوقات والمتحسنات", {c:true, b:true, z:34, sa:120});
+    body += wp("المعلمة: "+(T.teacher || "........................")+"      المادة: "+(T.subject || "........................"), {z:24});
+    body += wp("الفصل الدراسي: "+h.term+"      التاريخ: "+(h.date || "........")+" هـ", {z:24, sa:120});
+    var top = h.top.filter(function(r){ return r.sid; });
+    body += wp("أولًا: المتفوقات (الحاصلات على الدرجة الكاملة)", {b:true, z:26, sb:160});
+    body += wt([600,3800,1800,2500,1800], [["م","اسم الطالبة","الفصل","المادة","الدرجة الكاملة"]].concat(top.map(function(r, i){ var s = stu(r.sid) || {}; return [String(i+1), s.n || "", s.cls || "", r.subj || T.subject || "", lat(r.full || "")]; })));
+    var imp = h.imp.filter(function(r){ return r.sid; });
+    body += wp("ثانيًا: المتحسنات (لتعزيزهن)", {b:true, z:26, sb:240});
+    body += wt([450,2500,1250,1450,1000,1000,1100,1750], [["م","اسم الطالبة","الفصل","المادة","الدرجة السابقة","الدرجة الحالية","التحسّن","التعزيز"]].concat(imp.map(function(r, i){ var s = stu(r.sid) || {}; return [String(i+1), s.n || "", s.cls || "", r.subj || T.subject || "", lat(r.prev || ""), lat(r.cur || ""), hdiff(r).txt === "—" ? "" : hdiff(r).txt, r.rf || ""]; })));
+    body += wp("المعلمة: ..............................          موجهة الطالبات: ..............................", {z:24, sb:360});
+    var doc = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>'+body+'<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="900" w:right="700" w:bottom="900" w:left="700" w:header="500" w:footer="500" w:gutter="0"/><w:bidi/></w:sectPr></w:body></w:document>';
+    var z = new JSZip();
+    z.file("[Content_Types].xml", '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>');
+    z.file("_rels/.rels", '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>');
+    z.file("word/document.xml", doc);
+    return z.generateAsync({type:"uint8array", compression:"DEFLATE"});
+  }
+  async function doHonor(){
+    if(!S.h.top.some(function(r){ return r.sid; }) && !S.h.imp.some(function(r){ return r.sid; })){ toast("اختاري طالبة واحدة على الأقل"); return; }
+    try{
+      var dl = (window.claude && window.claude.use) ? await window.claude.use("downloads") : null;
+      if(!dl){ toast("تعذّر التنزيل في هذا المتصفح"); return; }
+      await dl.save({filename:"المتفوقات والمتحسنات.docx", data:await honorDocx()});
+      toast("تم تنزيل الملف");
+    }catch(e){ if(e && e.code === "declined") return; toast("تعذر تجهيز الملف، حاولي مرة أخرى"); }
+  }
+
   function tformsDraw(){
     if(!S.w.rows.length) S.w.rows.push(newRow());
-    renderTop(); renderWeekly(); renderPlan();
+    renderTop(); renderWeekly(); renderPlan(); renderHonor();
   }
 
   /* values that go into the Word templates */
@@ -1947,18 +2029,19 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
   }
 
   var tfRoot = $("#v-tforms");
-  function panelOf(el){ return el.closest("#tfPlan") ? "plan" : el.closest("#tfWeekly") ? "weekly" : ""; }
-  function redraw(el){ var k = panelOf(el); if(k === "plan") renderPlan(); else if(k === "weekly") renderWeekly(); }
+  function panelOf(el){ return el.closest("#tfHonor") ? "honor" : el.closest("#tfPlan") ? "plan" : el.closest("#tfWeekly") ? "weekly" : ""; }
+  function redraw(el){ var k = panelOf(el); if(k === "plan") renderPlan(); else if(k === "weekly") renderWeekly(); else if(k === "honor") renderHonor(); }
   tfRoot.addEventListener("input", function(e){
     var el = e.target.closest("[data-bind]"); if(!el) return;
     setp(el.dataset.bind, el.value);
+    if(el.dataset.hd !== undefined){ var r2 = S.h.imp[+el.dataset.hd], sp = $("#hd"+el.dataset.hd); if(sp) sp.textContent = hdiff(r2).txt; }
     if(el.id === "tfTeacher" || el.id === "tfSubject"){
       if(el.id === "tfTeacher"){
         var t = teachers.filter(function(x){ return x.n === el.value; })[0];
         if(t && !S.T.subject){ S.T.subject = t.sub; $("#tfSubject").value = t.sub; }
         if(t && t.cls && !(S.T.classes || []).length){
           var have = {}; CLASSES.forEach(function(c){ have[c[0]] = 1; }); students.forEach(function(x){ have[x.cls] = 1; });
-          pre = nclsList(t.cls).split(/\s*[،,]\s*/).map(function(x){ return x.trim(); }).filter(function(x){ return have[x]; });
+          var pre = nclsList(t.cls).split(/\s*[،,]\s*/).map(function(x){ return x.trim(); }).filter(function(x){ return have[x]; });
           if(pre.length){ S.T.classes = pre; S.T.all = false; tfRedrawAll(); }
         }
       }
@@ -1979,10 +2062,13 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     }
     if((b = e.target.closest("#tfTabs [data-t]"))){
       $$("#tfTabs .tab").forEach(function(x){ x.setAttribute("aria-pressed", x === b); });
-      $("#tfWeekly").hidden = b.dataset.t !== "weekly"; $("#tfPlan").hidden = b.dataset.t !== "plan"; return;
+      $("#tfWeekly").hidden = b.dataset.t !== "weekly"; $("#tfPlan").hidden = b.dataset.t !== "plan"; $("#tfHonor").hidden = b.dataset.t !== "honor"; return;
     }
     if((b = e.target.closest("[data-act]"))){
       var a = b.dataset.act, i = +b.dataset.i;
+      if(a === "hadd"){ S.h[b.dataset.k].push(b.dataset.k === "top" ? {sid:"", subj:S.T.subject || "", full:""} : {sid:"", subj:S.T.subject || "", prev:"", cur:"", rf:""}); renderHonor(); return; }
+      if(a === "hdel"){ S.h[b.dataset.k].splice(i, 1); renderHonor(); return; }
+      if(a === "dl-honor"){ doHonor(); return; }
       if(a === "add"){ if(S.w.rows.length < 10){ S.w.rows.push(newRow()); renderWeekly(); } }
       else if(a === "del"){ S.w.rows.splice(i, 1); if(!S.w.rows.length) S.w.rows.push(newRow()); renderWeekly(); }
       else if(a === "toplan"){
