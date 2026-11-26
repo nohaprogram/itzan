@@ -1887,6 +1887,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
   function renderLag(){
     var h = S.h, o = '<div class="card form"><div class="row"><label for="lTerm">الاختبار<select id="lTerm" data-bind="h.term">'+["الأول","الثاني","الثالث"].map(function(t){ return '<option'+(t===h.term?' selected':'')+'>'+t+'</option>'; }).join("")+'</select></label>'+
       inp("lDate","h.date","التاريخ (هجري)",h.date,"يوم / شهر / سنة")+'</div></div>';
+    o += '<div class="card form"><b>نموذج متابعة المستوى التحصيلي (مرمّز، فارغ)</b><p class="hint" style="margin:4px 0 8px">النسخة المضبوطة بترميزها، للتعبئة اليدوية أو في Word. لا تحتوي أسماء طالبات.</p><a class="btn ghost" href="/forms/%D9%85%D8%AA%D8%A7%D8%A8%D8%B9%D8%A9-%D8%A7%D9%84%D9%85%D8%B3%D8%AA%D9%88%D9%89-%D8%A7%D9%84%D8%AA%D8%AD%D8%B5%D9%8A%D9%84%D9%8A-%D9%81%D8%A7%D8%B1%D8%BA.docx" download>تنزيل النموذج الفارغ (Word)</a></div>';
     o += '<p class="hint">سجّلي الطالبات المتأخرات دراسيًا في مادتك (حتى 14 طالبة)، ويُنزَّل البيان بنفس نموذج المدرسة.</p>';
     h.lag.forEach(function(r, i){
       var s = stu(r.sid), p = "h.lag."+i;
