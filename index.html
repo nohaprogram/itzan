@@ -2875,7 +2875,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
         var d = await tcall({action:"login", id:$("#tlN").value, code:$("#tlC").value});
         await A.loginWith(d.session);
         try{ sessionStorage.setItem("itzan.tfirst", d.personal ? "" : "1"); }catch(x){}
-        location.href = "/#tforms"; location.reload();
+        m.textContent = "تم الدخول. أهلًا " + (d.name || "") + "، جارٍ فتح لوحة المعلمة…"; toast("تم الدخول بنجاح"); setTimeout(function(){ location.replace("/#tforms"); }, 700);
       }catch(err){ m.textContent = TERR[err.message] || "تعذّر الدخول."; b.disabled = false; }
     });
   }
