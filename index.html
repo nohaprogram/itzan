@@ -2847,7 +2847,8 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
   async function tcall(o, auth){
     var h = {"Content-Type":"application/json"};
     if(auth && window.itzanAuth) h.Authorization = "Bearer "+(await itzanAuth.token());
-    var r = await fetch("/api/tlogin", {method:"POST", headers:h, body:JSON.stringify(o)});
+    var ac = new AbortController(), tm = setTimeout(function(){ ac.abort(); }, 12000);
+    var r; try{ r = await fetch("/api/tlogin", {method:"POST", headers:h, body:JSON.stringify(o), signal:ac.signal}); } finally { clearTimeout(tm); }
     var d = await r.json().catch(function(){ return {}; });
     if(!r.ok){ var er = new Error(d.error || ("http-"+r.status)); throw er; }
     return d;
@@ -2861,7 +2862,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
       sel.innerHTML = '<option value="">اختاري اسمك</option>'+d.names.map(function(x){ return '<option value="'+esc(x.id)+'">'+esc(x.n)+'</option>'; }).join("");
       if(!d.enabled) $("#tlMsg").textContent = "لم تضع موجهة الطالبات الرمز العام بعد.";
       tlLoaded = true;
-    }catch(e){ sel.innerHTML = '<option value="">تعذّر تحميل الأسماء</option>'; }
+    }catch(e){ sel.innerHTML = '<option value="">تعذّر تحميل الأسماء — حدّثي الصفحة</option>'; $("#tlMsg").textContent = (e && e.name === "AbortError") ? "الاتصال بطيء، حدّثي الصفحة بعد قليل." : ("رمز الخطأ: " + (e && e.message || "")); }
   }
   if($("#tLoginForm")){
     window.addEventListener("hashchange", function(){ if(location.hash === "#login") tlNames(); });

@@ -15,7 +15,7 @@ const same = (a, b) => { const x = Buffer.from(String(a)), y = Buffer.from(Strin
 const derivedPw = id => crypto.createHmac("sha256", SVC).update("teacher-pw|" + id).digest("hex");
 
 async function getDoc(coll, id) {
-  const r = await fetch(URL_ + "/rest/v1/docs?select=data&coll=eq." + coll + "&id=eq." + encodeURIComponent(id), { headers: H() });
+  const r = await fetch(URL_ + "/rest/v1/docs?select=data&coll=eq." + coll + "&id=eq." + encodeURIComponent(id), { headers: H(), signal: AbortSignal.timeout(8000) });
   if (!r.ok) throw new Error("db-read");
   const a = await r.json();
   return a[0] ? a[0].data : null;
