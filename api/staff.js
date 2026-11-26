@@ -1,4 +1,4 @@
-// وظيفة Vercel: إدارة حسابات الموظفات من داخل الموقع (للمرشدة فقط).
+// وظيفة Vercel: إدارة حسابات الموظفات من داخل الموقع (لموجهة الطالبات فقط).
 // المفتاح السري يُوضع في Vercel ← Settings ← Environment Variables باسم SUPABASE_SERVICE_KEY ولا يظهر للمتصفح.
 const URL_ = process.env.SUPABASE_URL || "https://dhvcrpidxpoyftxfltca.supabase.co";
 const ANON = process.env.SUPABASE_ANON_KEY || "sb_publishable_T4bnZP02hm4trJNQ7cTxXw_2iRdrd6F";
@@ -12,7 +12,7 @@ module.exports = async (req, res) => {
   if (!SVC) return J(res, 500, { error: "no-service-key" });
   const tok = (req.headers.authorization || "").replace(/^Bearer\s+/i, "");
   if (!tok) return J(res, 401, { error: "auth" });
-  // التحقق أن المتصلة مرشدة
+  // التحقق أن المتصلة موجهة الطالبات
   const c = await fetch(URL_ + "/rest/v1/rpc/is_counselor", { method: "POST", headers: { apikey: ANON, Authorization: "Bearer " + tok, "Content-Type": "application/json" }, body: "{}" });
   if (!c.ok) return J(res, 500, { error: "rpc-failed", detail: c.status + " " + (await c.text()).slice(0, 200) });
   if ((await c.json()) !== true) return J(res, 403, { error: "not-counselor" });
