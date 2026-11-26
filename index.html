@@ -515,7 +515,14 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
   </div>
   <div id="d-acc" hidden>
     <div data-staff hidden>
-      <h3 class="section-title">إضافة معلمة أو موجهة الطالبات</h3>
+      <h3 class="section-title">رمز دخول المعلمات</h3>
+      <div class="card" id="tcBox">
+        <p style="font-size:14px;color:var(--muted)">رمز عام من ٤ أرقام تعطينه لجميع المعلمات؛ تختار كل معلمة اسمها وتدخل به، ثم تغيّره إلى رمزها الخاص من «نماذج المعلمات». أسماؤهن تؤخذ من قائمة المعلمات.</p>
+        <form class="form" id="tcForm" autocomplete="off"><div class="row"><label for="tcC">الرمز العام<input type="text" id="tcC" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" required dir="ltr" style="letter-spacing:6px;text-align:center"></label></div>
+        <div><button class="btn" type="submit">حفظ الرمز العام</button> <span id="tcMsg" style="font-size:14px;color:var(--muted)"></span></div></form>
+        <div class="scroll" style="margin-top:12px"><table id="tcTable"></table></div>
+      </div>
+      <h3 class="section-title">إضافة معلمة أو موجهة الطالبات بالبريد</h3>
       <form class="form card" id="accForm">
         <div class="row"><label for="accE">البريد الإلكتروني<input type="email" id="accE" dir="ltr" required></label>
         <label for="accP">كلمة المرور (٨ أحرف فأكثر)<input type="text" id="accP" dir="ltr" minlength="8" required></label>
@@ -738,6 +745,12 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
 <section class="view" id="v-tforms" hidden>
   <div class="eyebrow">للمعلمات</div>
   <h2>نماذج المعلمات</h2>
+  <details class="card" id="myCode" data-tonly hidden style="margin:10px 0"><summary style="cursor:pointer;font-weight:600">تغيير رمز دخولي</summary>
+    <form class="form" id="myCodeForm" autocomplete="off" style="margin-top:10px">
+      <label for="mcC">الرمز الجديد (٤ أرقام)<input type="password" id="mcC" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" required dir="ltr" style="letter-spacing:6px;text-align:center"></label>
+      <div><button class="btn" type="submit">حفظ الرمز</button> <span id="mcMsg" style="font-size:14px;color:var(--muted)"></span></div>
+    </form>
+  </details>
   <p class="lead">اختاري الطالبة من القائمة فيُكتب اسمها وفصلها تلقائيًا، ثم اضغطي على الخيارات وأنزلي النموذج بصيغة Word بنفس شكل النموذج المعتمد.</p>
   <div class="card form" id="tfTop">
     <div class="row">
@@ -798,8 +811,16 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
 <!-- دخول موجهة الطالبات والمعلمات -->
 <section class="view" id="v-login" hidden>
   <div class="narrow" style="max-width:420px;margin:32px auto">
-    <h2>دخول موجهة الطالبات والمعلمات الموكلات</h2>
-    <p class="lead">هذه الصفحة خاصة بالموظفات. أدخلي البريد وكلمة السر التي أُنشئت لك.</p>
+    <h2>دخول المعلمات</h2>
+    <p class="lead">اختاري اسمك وأدخلي الرمز (٤ أرقام). أول مرة تدخلين بالرمز العام الذي تعطيك إياه موجهة الطالبات، ثم تغيّرينه إلى رمزك الخاص بعد الدخول.</p>
+    <form class="form card" id="tLoginForm" autocomplete="off">
+      <label for="tlN">الاسم<select id="tlN" required><option value="">جارٍ تحميل الأسماء…</option></select></label>
+      <label for="tlC">الرمز<input type="password" id="tlC" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" required dir="ltr" autocomplete="off" style="letter-spacing:6px;text-align:center"></label>
+      <div><button class="btn" type="submit" id="tlB">دخول</button></div>
+      <div class="hint" id="tlMsg" role="status"></div>
+    </form>
+    <h2 style="margin-top:28px">دخول موجهة الطالبات</h2>
+    <p class="lead">أدخلي البريد وكلمة السر.</p>
     <form class="form card" id="loginForm" autocomplete="on">
       <label for="lgE">البريد الإلكتروني<input type="email" id="lgE" required autocomplete="username" dir="ltr"></label>
       <label for="lgP">كلمة السر<input type="password" id="lgP" required autocomplete="current-password" dir="ltr"></label>
@@ -2376,7 +2397,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
   function dashTab(k){
     ["inbox","book","scale","plist","parts","fup","surv","plan","part","acc"].forEach(function(x){ $("#d-"+x).hidden = x !== k; });
     if(k === "plist" && typeof plStats === "function") plStats();
-    if(k === "acc" && typeof accLoad === "function") accLoad();
+    if(k === "acc" && typeof accLoad === "function") accLoad(); if(k === "acc" && typeof tcLoad === "function") tcLoad();
     if(k === "plan" && typeof planDraw === "function") planDraw();
     if(k === "part" && typeof partDraw === "function") partDraw();
     $$("#dashTabs .tab").forEach(function(t){ t.setAttribute("aria-pressed", t.dataset.d === k); });
@@ -2446,7 +2467,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
   });
   function applyRole(){
     $$("[data-staff]").forEach(function(el){ el.hidden = !isStaff; });
-    document.body.classList.toggle("teacher", isStaff && !isCounselor);
+    document.body.classList.toggle("teacher", isStaff && !isCounselor); if(typeof tcShowMine === "function") tcShowMine();
     var nv = $('#nav a[href="#staff"], #nav a[href="#tforms"][data-tnav]');
     if(nv && isStaff && !isCounselor){ nv.setAttribute("href","#tforms"); nv.setAttribute("data-tnav","1"); nv.textContent = "نماذج المعلمات"; }
     else if(nv && nv.hasAttribute("data-tnav")){ nv.setAttribute("href","#staff"); nv.removeAttribute("data-tnav"); nv.textContent = "لوحة موجهة الطالبات"; }
@@ -2805,7 +2826,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     try{
       var d = await accCall({action:"list"});
       $("#accTable").innerHTML = '<thead><tr><th>البريد</th><th>الصلاحية</th><th></th></tr></thead><tbody>'+
-        d.list.map(function(x){ return '<tr><td dir="ltr">'+esc(x.email)+'</td><td>'+(x.role==="teacher"?"معلمة":"موجهة الطالبات")+'</td><td><button class="btn" type="button" data-acc-rm="'+esc(x.email)+'">إزالة الصلاحية</button></td></tr>'; }).join("")+'</tbody>';
+        d.list.filter(function(x){ return !/@teachers\.example\.com$/.test(x.email); }).map(function(x){ return '<tr><td dir="ltr">'+esc(x.email)+'</td><td>'+(x.role==="teacher"?"معلمة":"موجهة الطالبات")+'</td><td><button class="btn" type="button" data-acc-rm="'+esc(x.email)+'">إزالة الصلاحية</button></td></tr>'; }).join("")+'</tbody>';
     }catch(e){ $("#accTable").innerHTML = '<tbody><tr><td class="empty">'+esc(ACCERR[e.message] || "تعذّر تحميل الحسابات.")+'<br><small dir="ltr">'+esc(e.message+" "+(e.detail||""))+'</small></td></tr></tbody>'; }
   }
   $("#accForm").addEventListener("submit", async function(e){
@@ -2820,6 +2841,77 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     try{ await accCall({action:"remove", email:b.dataset.accRm}); accLoad(); toast("أُزيلت الصلاحية"); }
     catch(err){ toast(ACCERR[err.message] || "تعذّرت الإزالة"); }
   });
+
+  /* ---------- رمز دخول المعلمات ---------- */
+  var TERR = {"locked":"محاولات كثيرة خاطئة. انتظري ١٥ دقيقة ثم أعيدي.","wrong":"الاسم أو الرمز غير صحيح.","bad-code":"الرمز يجب أن يكون ٤ أرقام.","no-service-key":"لم يُضبط المفتاح السري في Vercel بعد.","not-teacher":"هذا الخيار للمعلمات الداخلات بالرمز.","not-counselor":"لموجهة الطالبات فقط."};
+  async function tcall(o, auth){
+    var h = {"Content-Type":"application/json"};
+    if(auth && window.itzanAuth) h.Authorization = "Bearer "+(await itzanAuth.token());
+    var r = await fetch("/api/tlogin", {method:"POST", headers:h, body:JSON.stringify(o)});
+    var d = await r.json().catch(function(){ return {}; });
+    if(!r.ok){ var er = new Error(d.error || ("http-"+r.status)); throw er; }
+    return d;
+  }
+  var tlLoaded = false;
+  async function tlNames(){
+    var sel = $("#tlN"); if(!sel || tlLoaded) return;
+    try{
+      var d = await tcall({action:"names"});
+      if(!d.names.length){ sel.innerHTML = '<option value="">لم تُضف أسماء المعلمات بعد</option>'; return; }
+      sel.innerHTML = '<option value="">اختاري اسمك</option>'+d.names.map(function(x){ return '<option value="'+esc(x.id)+'">'+esc(x.n)+'</option>'; }).join("");
+      if(!d.enabled) $("#tlMsg").textContent = "لم تضع موجهة الطالبات الرمز العام بعد.";
+      tlLoaded = true;
+    }catch(e){ sel.innerHTML = '<option value="">تعذّر تحميل الأسماء</option>'; }
+  }
+  if($("#tLoginForm")){
+    window.addEventListener("hashchange", function(){ if(location.hash === "#login") tlNames(); });
+    if(location.hash === "#login" || /\/admin\/?$/.test(location.pathname)) tlNames();
+    $("#tLoginForm").addEventListener("submit", async function(e){
+      e.preventDefault(); var m = $("#tlMsg"), b = $("#tlB"), A = window.itzanAuth;
+      if(!A || !A.on){ m.textContent = "لم يُربط الموقع بقاعدة البيانات بعد."; return; }
+      b.disabled = true; m.textContent = "جارٍ الدخول…";
+      try{
+        var d = await tcall({action:"login", id:$("#tlN").value, code:$("#tlC").value});
+        await A.loginWith(d.session);
+        try{ sessionStorage.setItem("itzan.tfirst", d.personal ? "" : "1"); }catch(x){}
+        location.href = "/#tforms"; location.reload();
+      }catch(err){ m.textContent = TERR[err.message] || "تعذّر الدخول."; b.disabled = false; }
+    });
+  }
+  var mcf = $("#myCodeForm");
+  if(mcf){
+    mcf.addEventListener("submit", async function(e){
+      e.preventDefault(); var m = $("#mcMsg");
+      try{ await tcall({action:"setcode", code:$("#mcC").value}, true); m.textContent = "تم حفظ رمزك الخاص. استخدميه في الدخول القادم."; $("#mcC").value = ""; try{ sessionStorage.removeItem("itzan.tfirst"); }catch(x){} }
+      catch(err){ m.textContent = TERR[err.message] || "تعذّر الحفظ."; }
+    });
+  }
+  function tcShowMine(){
+    var d = $("#myCode"); if(!d) return;
+    var isT = isStaff && !isCounselor; d.hidden = !isT;
+    try{ if(isT && sessionStorage.getItem("itzan.tfirst") === "1") d.open = true; }catch(x){}
+  }
+  async function tcLoad(){
+    if(!$("#tcTable")) return;
+    try{
+      var d = await tcall({action:"status"}, true);
+      $("#tcC").value = d.shared || "";
+      $("#tcTable").innerHTML = '<thead><tr><th>المعلمة</th><th>الرمز</th><th></th></tr></thead><tbody>'+
+        teachers.map(function(t){ var p = d.personal.indexOf(String(t.id)) >= 0;
+          return '<tr><td>'+esc(t.n)+'</td><td>'+(p?"رمز خاص":"الرمز العام")+'</td><td>'+(p?'<button class="btn" type="button" data-tc-rs="'+esc(t.id)+'">إرجاعها للرمز العام</button>':"")+'</td></tr>'; }).join("")+'</tbody>';
+    }catch(e){ $("#tcTable").innerHTML = '<tbody><tr><td class="empty">'+esc(TERR[e.message] || "تعذّر تحميل حالة الرموز.")+'</td></tr></tbody>'; }
+  }
+  if($("#tcForm")){
+    $("#tcForm").addEventListener("submit", async function(e){
+      e.preventDefault(); var m = $("#tcMsg"); m.textContent = "جارٍ الحفظ…";
+      try{ await tcall({action:"setshared", code:$("#tcC").value}, true); m.textContent = "تم حفظ الرمز العام."; tcLoad(); }
+      catch(err){ m.textContent = TERR[err.message] || "تعذّر الحفظ."; }
+    });
+    $("#tcTable").addEventListener("click", async function(e){
+      var b = e.target.closest("[data-tc-rs]"); if(!b) return;
+      try{ await tcall({action:"resetone", id:b.dataset.tcRs}, true); tcLoad(); toast("أُرجعت المعلمة للرمز العام"); }catch(err){ toast("تعذّر الإرجاع"); }
+    });
+  }
 
   /* ---------- دخول الموظفات ---------- */
   (function(){

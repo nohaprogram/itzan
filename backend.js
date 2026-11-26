@@ -144,6 +144,11 @@
       if(!ok){ save(null); staffFlag = null; throw new Error("not-staff"); }
       return true;
     },
+    loginWith: async function(r){
+      var n = norm(r); n.anon = false; save(n); staffFlag = null; roleCache = null;
+      if(!(await checkStaff())){ save(null); staffFlag = null; throw new Error("not-staff"); }
+      return true;
+    },
     logout: function(){ save(null); staffFlag = null; },
     isStaff: checkStaff
   };
