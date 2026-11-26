@@ -777,6 +777,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
       <label for="tfTeacher">اسم المعلمة<input type="text" id="tfTeacher" data-bind="T.teacher" list="tfTeachers" autocomplete="off" placeholder="اكتبي الاسم أو اختاريه"></label>
       <label for="tfSubject">المادة<input type="text" id="tfSubject" data-bind="T.subject" list="tfSubjects" autocomplete="off" placeholder="مثال: الرياضيات"></label>
     </div>
+    <div id="tfCls"></div>
     <datalist id="tfTeachers"></datalist>
     <datalist id="tfSubjects">
       <option value="القرآن الكريم"><option value="التفسير"><option value="الحديث"><option value="الفقه"><option value="التوحيد">
@@ -952,17 +953,32 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
   /* ---------- lists ---------- */
   var STATUS = ["متفوقة","مستقرة","تحتاج متابعة"];
   var students = [
-    {id:1,g:1,cls:"١/أ",n:"سارة العتيبي",s:"متفوقة"},{id:2,g:1,cls:"١/أ",n:"لمى الغامدي",s:"مستقرة"},
-    {id:3,g:1,cls:"١/ب",n:"رهف الزهراني",s:"تحتاج متابعة"},{id:4,g:2,cls:"٢/أ",n:"جود القحطاني",s:"مستقرة"},
-    {id:5,g:2,cls:"٢/ب",n:"ديما الحربي",s:"متفوقة"},{id:6,g:2,cls:"٢/ب",n:"ريم السلمي",s:"تحتاج متابعة"},
-    {id:7,g:3,cls:"٣/أ",n:"نوف المالكي",s:"مستقرة"},{id:8,g:3,cls:"٣/أ",n:"هيا الشهري",s:"متفوقة"},
-    {id:9,g:3,cls:"٣/ب",n:"غدير البقمي",s:"تحتاج متابعة"}
+    {id:1,g:1,cls:"1\u200F/\u200F1",n:"سارة العتيبي",s:"متفوقة"},{id:2,g:1,cls:"1\u200F/\u200F1",n:"لمى الغامدي",s:"مستقرة"},
+    {id:3,g:1,cls:"1\u200F/\u200F2",n:"رهف الزهراني",s:"تحتاج متابعة"},{id:4,g:2,cls:"2\u200F/\u200F1",n:"جود القحطاني",s:"مستقرة"},
+    {id:5,g:2,cls:"2\u200F/\u200F2",n:"ديما الحربي",s:"متفوقة"},{id:6,g:2,cls:"2\u200F/\u200F2",n:"ريم السلمي",s:"تحتاج متابعة"},
+    {id:7,g:3,cls:"3\u200F/\u200F1",n:"نوف المالكي",s:"مستقرة"},{id:8,g:3,cls:"3\u200F/\u200F1",n:"هيا الشهري",s:"متفوقة"},
+    {id:9,g:3,cls:"3\u200F/\u200F2",n:"غدير البقمي",s:"تحتاج متابعة"}
   ];
   var teachers = [
-    {id:21,n:"أ. منى الشريف",sub:"الرياضيات",cls:"١/أ، ١/ب"},
-    {id:22,n:"أ. هند العمري",sub:"اللغة العربية",cls:"٢/أ، ٢/ب"},
-    {id:23,n:"أ. أمل الدوسري",sub:"الأحياء",cls:"٣/أ، ٣/ب"}
+    {id:21,n:"أ. منى الشريف",sub:"الرياضيات",cls:"1\u200F/\u200F1، 1\u200F/\u200F2"},
+    {id:22,n:"أ. هند العمري",sub:"اللغة العربية",cls:"2\u200F/\u200F1، 2\u200F/\u200F2"},
+    {id:23,n:"أ. أمل الدوسري",sub:"الأحياء",cls:"3\u200F/\u200F1، 3\u200F/\u200F2"}
   ];
+  /* توحيد كتابة الفصل: الصف ثم رقم الفصل، مثل 1/1 و1/2 و1/3 */
+  var SEC = {"أ":1,"ا":1,"ب":2,"ج":3,"د":4,"هـ":5,"ه":5};
+  function lat(x){ return String(x).replace(/[٠-٩]/g, function(c){ return c.charCodeAt(0) - 1632; }); }
+  var RLM = "\u200F";
+  function ncls(c){
+    var m = lat(c == null ? "" : c).replace(/[\u200E\u200F]/g, "").trim().match(/^(\d)\s*[\/\-\\]\s*(\S+)$/);
+    if(!m) return String(c == null ? "" : c).trim();
+    var sec = SEC[m[2]] !== undefined ? SEC[m[2]] : m[2];
+    return m[1] + RLM + "/" + RLM + sec;   /* الصف من اليمين ثم / ثم رقم الفصل */
+  }
+  function nclsList(c){ return String(c || "").split(/\s*[،,]\s*/).filter(Boolean).map(ncls).join("، "); }
+  function normPeople(){
+    students.forEach(function(x){ if(x.cls) x.cls = ncls(x.cls); });
+    teachers.forEach(function(x){ if(x.cls) x.cls = nclsList(x.cls); });
+  }
   var listKey = "1";
   var LISTNAMES = {"1":"أول ثانوي","2":"ثاني ثانوي","3":"ثالث ثانوي","t":"المعلمات والموظفات"};
   function nrm(x){ return String(x||"").replace(/[\u064B-\u065F\u0640]/g,"").replace(/[أإآ]/g,"ا").replace(/ة/g,"ه").replace(/ى/g,"ي").replace(/[^\u0600-\u06FFa-zA-Z0-9 ]/g," ").replace(/\s+/g," ").trim(); }
@@ -998,10 +1014,10 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     if(listKey === "t"){
       f.innerHTML = '<div class="row"><label for="aN">اسم المعلمة<input type="text" id="aN" required></label>'+
         '<label for="aS">المهمة أو المادة<input type="text" id="aS" required placeholder="مثال: وكيلة، أو الرياضيات"></label>'+
-        '<label for="aC">الفصول<input type="text" id="aC" placeholder="مثال: ١/أ، ١/ب"></label></div><div><button class="btn" type="submit">إضافة المعلمة</button></div>';
+        '<label for="aC">الفصول<input type="text" id="aC" placeholder="مثال: 1/1، 1/2"></label></div><div><button class="btn" type="submit">إضافة المعلمة</button></div>';
     } else {
       f.innerHTML = '<div class="row"><label for="aN">اسم الطالبة<input type="text" id="aN" required></label>'+
-        '<label for="aC">الفصل<input type="text" id="aC" placeholder="مثال: '+listKey+'/أ" required></label>'+
+        '<label for="aC">الفصل<input type="text" id="aC" placeholder="مثال: '+listKey+'/1" required></label>'+
         '<label for="aS">المادة المتعثر فيها (إن وُجدت)<input type="text" id="aS" placeholder="اتركيه فارغًا إن لم تكن متعثرة"></label></div>'+
         '<div><button class="btn" type="submit">إضافة إلى '+LISTNAMES[listKey]+'</button></div>';
     }
@@ -1046,8 +1062,8 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
   $("#addForm").addEventListener("submit", function(e){
     e.preventDefault();
     var n = $("#aN").value.trim(); if(!n) return;
-    if(listKey === "t"){ teachers.push({id:nid(), n:n, sub:$("#aS").value.trim(), cls:$("#aC").value.trim()}); }
-    else { students.push({id:nid(), g:+listKey, cls:$("#aC").value.trim(), n:n, s:$("#aS").value.trim() ? "ضعيفة" : "", w:$("#aS").value.trim()}); }
+    if(listKey === "t"){ teachers.push({id:nid(), n:n, sub:$("#aS").value.trim(), cls:nclsList($("#aC").value)}); }
+    else { students.push({id:nid(), g:+listKey, cls:ncls($("#aC").value), n:n, s:$("#aS").value.trim() ? "ضعيفة" : "", w:$("#aS").value.trim()}); }
     renderList(); renderAddForm(); toast("تمت الإضافة");
   });
   $("#impForm").addEventListener("submit", function(e){
@@ -1058,7 +1074,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
       var f = line.split(/[,،;\t]/).map(function(x){ return x.trim(); });
       var g = parseGrade(f[1]);
       if(!f[0] || !g){ bad++; return; }
-      var c = f[2] ? AD[g] + "/" + f[2] : AD[g];
+      var c = f[2] ? ncls(g + "/" + f[2]) : String(g);
       if(!students.some(function(x){ return nrm(x.n) === nrm(f[0]) && x.g === g; })){ students.push({id:nid(), g:g, cls:c, n:f[0], s:""}); n++; }
     });
     $("#impText").value = ""; listKey = "1"; renderTabs(); renderAddForm(); renderList(); saveLists();
@@ -1684,10 +1700,10 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
       procs:PROC.map(function(){ return {on:false, time:"", st:"", why:""}; }), procOther:"",
       fu:[1,2,3].map(function(){ return {date:"", lv:"", res:""}; }), imp:"auto"};
   }
-  var S = {T:{teacher:"", subject:""}, w:{term:"الأول", week:"", date:hdate(), rows:[newRow()]}, p:freshPlan()};
+  var S = {T:{teacher:"", subject:"", classes:[], all:false}, w:{term:"الأول", week:"", date:hdate(), rows:[newRow()]}, p:freshPlan()};
   try{
     var sv = JSON.parse(localStorage.getItem("itizan-teacher") || "{}");
-    if(sv.teacher) S.T.teacher = sv.teacher; if(sv.subject) S.T.subject = sv.subject;
+    if(sv.teacher) S.T.teacher = sv.teacher; if(sv.subject) S.T.subject = sv.subject; if(sv.classes && sv.classes.length) S.T.classes = sv.classes.map(ncls); S.T.all = !!sv.all;
   }catch(e){}
   function saveTeacher(){ try{ localStorage.setItem("itizan-teacher", JSON.stringify(S.T)); }catch(e){} }
   function stu(id){ return students.filter(function(x){ return String(x.id) === String(id); })[0]; }
@@ -1696,8 +1712,10 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
   function ea(s){ return esc(s == null ? "" : s); }
 
   function stuSelect(id, path, val){
-    var by = {};
-    students.forEach(function(s){ var k = s.g + "|" + s.cls; (by[k] = by[k] || []).push(s); });
+    var by = {}, mine = (S.T.classes || []).length && !S.T.all;
+    students.forEach(function(s){
+      if(mine && S.T.classes.indexOf(s.cls) < 0 && String(s.id) !== String(val)) return;
+      var k = s.g + "|" + s.cls; (by[k] = by[k] || []).push(s); });
     return '<select id="'+id+'" data-bind="'+path+'" data-re="1"><option value="">اختاري الطالبة من القائمة</option>'+
       Object.keys(by).sort().map(function(k){
         var a = by[k];
@@ -1790,7 +1808,15 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
   function renderTop(){
     $("#tfTeacher").value = S.T.teacher; $("#tfSubject").value = S.T.subject;
     $("#tfTeachers").innerHTML = teachers.map(function(t){ return '<option value="'+ea(t.n)+'">'; }).join("");
+    var cl = {}; students.forEach(function(x){ if(x.cls) cl[x.cls] = x.g || 0; });
+    var keys = Object.keys(cl).sort(function(a, b){ return cl[a] - cl[b] || (a < b ? -1 : 1); }), sel = S.T.classes || [];
+    var n = students.filter(function(x){ return sel.indexOf(x.cls) >= 0; }).length;
+    $("#tfCls").innerHTML = keys.length ? '<div class="sub-h">الفصول التي تدرّسينها <span class="hint">(اختاري فصولك فتظهر طالباتها فقط في القوائم)</span></div><div class="chips">'+
+      keys.map(function(k){ return '<button type="button" class="tg" data-cls="'+ea(k)+'" aria-pressed="'+(sel.indexOf(k) >= 0)+'">'+ea(k)+'</button>'; }).join("")+
+      (sel.length ? '<button type="button" class="tg sm" data-clsall="1" aria-pressed="'+(!!S.T.all)+'">عرض كل الطالبات</button>' : '')+'</div>'+
+      (sel.length ? '<div class="hint" style="margin-top:6px">'+sel.length+' فصل · '+n+' طالبة'+(S.T.all ? ' (القائمة تعرض الجميع الآن)' : '')+'</div>' : '') : '<div class="hint">تظهر هنا فصول المدرسة بعد إضافة قوائم الطالبات.</div>';
   }
+  function tfRedrawAll(){ saveTeacher(); renderTop(); renderWeekly(); renderPlan(); }
   function tformsDraw(){
     if(!S.w.rows.length) S.w.rows.push(newRow());
     renderTop(); renderWeekly(); renderPlan();
@@ -1914,6 +1940,11 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
       if(el.id === "tfTeacher"){
         var t = teachers.filter(function(x){ return x.n === el.value; })[0];
         if(t && !S.T.subject){ S.T.subject = t.sub; $("#tfSubject").value = t.sub; }
+        if(t && t.cls && !(S.T.classes || []).length){
+          var have = {}; students.forEach(function(x){ have[x.cls] = 1; });
+          pre = String(t.cls).split(/\s*[،,]\s*/).map(function(x){ return x.trim(); }).filter(function(x){ return have[x]; });
+          if(pre.length){ S.T.classes = pre; S.T.all = false; tfRedrawAll(); }
+        }
       }
       saveTeacher();
     }
@@ -1921,6 +1952,8 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
   });
   tfRoot.addEventListener("click", function(e){
     var b;
+    if((b = e.target.closest("[data-cls]"))){ var ci = (S.T.classes = S.T.classes || []).indexOf(b.dataset.cls); if(ci >= 0) S.T.classes.splice(ci, 1); else S.T.classes.push(b.dataset.cls); if(!S.T.classes.length) S.T.all = false; tfRedrawAll(); return; }
+    if((b = e.target.closest("[data-clsall]"))){ S.T.all = !S.T.all; tfRedrawAll(); return; }
     if((b = e.target.closest("[data-tg]"))){ setp(b.dataset.tg, !getp(b.dataset.tg)); redraw(b); return; }
     if((b = e.target.closest("[data-rd]"))){ var cur = getp(b.dataset.rd); setp(b.dataset.rd, cur === b.dataset.v ? "" : b.dataset.v); redraw(b); return; }
     if((b = e.target.closest("[data-add]"))){
@@ -2470,6 +2503,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     f.text().then(function(t){
       var d = JSON.parse(t), ns = d.students || [], nt = d.teachers || [];
       var ids = {}; students.forEach(function(x){ ids[x.id] = 1; }); ns.forEach(function(x){ if(!ids[x.id]) students.push(x); });
+      normPeople();
       ids = {}; teachers.forEach(function(x){ ids[x.id] = 1; }); nt.forEach(function(x){ if(!ids[x.id]) teachers.push(x); });
       renderTabs(); renderList(); saveLists(); toast("تم إدراج "+ns.length+" طالبة و"+nt.length+" موظفة"); inp.value = "";
     }).catch(function(){ toast("الملف غير صالح"); });
@@ -2562,7 +2596,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
       if(!sn.exists) return;
       var d = sn.data(), js = JSON.stringify([d.students || [], d.teachers || []]);
       if(js === lastLists) return;
-      lastLists = js; students = d.students || []; teachers = d.teachers || []; peopleSave();
+      lastLists = js; students = d.students || []; teachers = d.teachers || []; normPeople(); peopleSave();
       renderList(); if(typeof scalesDraw === "function") scalesDraw();
     });
   })();
