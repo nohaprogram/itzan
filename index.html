@@ -847,7 +847,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     ["ثانياً: الاستشارات الأكاديمية", ["معالجة التأخر الدراسي وضعف الدافعية.","تنظيم الوقت والمذاكرة، ومعالجة قلق الاختبارات.","متابعة الغياب والتأخر وأسبابهما."]],
     ["ثالثاً: الاستشارات الاجتماعية والأسرية", ["حل المشكلات مع الزميلات والمعلمات.","التواصل مع أولياء الأمور وإرشادهم.","معالجة المشكلات الأسرية المؤثرة على الطالبة."]],
     ["رابعاً: التوجيه المهني والجامعي", ["تعريف الطالبات بالتخصصات والفرص الجامعية.","مساعدتهن في اختيار المسار (المسارات الثانوية) وفق الميول والقدرات."]],
-    ["خامساً: المهام الوقائية والنمائية", ["إعداد برامج توعوية (الصحة النفسية، الأمن الفكري، السلامة الرقمية).","تنفيذ ورش ومحاضرات وإذاعة مدرسية.","الكشف المبكر عن الطالبات المعرضات للخطر.","رعاية المتفوقات والموهوبات."]],
+    ["خامساً: المهام الوقائية والنمائية", ["إعداد برامج توعوية (الصحة النفسية، الأمن الفكري، السلامة الرقمية).","إعداد برامج تعزيز السلوك الإيجابي.","تنفيذ ورش ومحاضرات وإذاعة مدرسية.","رعاية المتفوقات والموهوبات."]],
     ["سادساً: المهام الإدارية والفنية", ["إعداد الخطة السنوية للتوجيه والإرشاد.","حفظ السجلات (الحالات، الجلسات، التقارير).","كتابة تقرير دوري ورفعه لإدارة المدرسة.","المشاركة في لجان المدرسة."]]
   ];
   $("#duties").innerHTML = DUTIES.map(function(d){
@@ -2010,6 +2010,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
         }
         if(!ex0) ex0 = list.filter(function(x){ return x.t === it.t && x.dt === it.dt; })[0];
         if(ex0){
+          if(it.nc !== undefined) ex0.nc = !!it.nc;
           if((it.vids || []).length && !(ex0.fs || []).some(function(f){ return /^video\//.test(f.t); })){
             ex0.fs = ex0.fs || [];
             for(var q0 = 0; q0 < it.vids.length; q0++){
@@ -2024,7 +2025,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
         }
         if(list.some(function(x){ return x.t === it.t && x.dt === it.dt; }) || newItems.some(function(x){ return x.pid === it.pid && x.e.t === it.t && x.e.dt === it.dt; })){ skipped++; continue; }
         var fs = [];
-        for(var j = 0; j < it.imgs.length; j++){
+        for(var j = 0; j < (it.imgs || []).length; j++){
           m.textContent = "رفع الصور: " + (i+1) + " من " + data.items.length + " (" + (j+1) + "/" + it.imgs.length + ")";
           var blob = await z.file(it.imgs[j]).async("blob");
           var file = new File([blob], it.imgs[j], {type:"image/jpeg"});
@@ -2110,7 +2111,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
       h += '<div class="zone zone-t"><h3>للمرشدة والمعلمات الموكلات</h3><div class="hint">لا يظهر هذا القسم للطالبات.</div>'+
         '<div class="tabs" role="group" aria-label="أقسام البرنامج">'+T.map(function(t){ return '<button class="tab" type="button" data-act="stab" data-t="'+t[0]+'" aria-pressed="'+(stTab===t[0])+'">'+t[1]+'</button>'; }).join("")+'</div>';
       if(stTab === "ev"){
-        h += (ev.length ? '<ul class="plain">'+ev.map(function(x,i){ return '<li><b>'+esc(x.t)+'</b>'+(x.dt?' · '+esc(x.dt):'')+(x.d?'<div style="font-size:14px">'+esc(x.d)+'</div>':'')+(safeUrl(x.url)?'<div style="font-size:14px"><a href="'+esc(safeUrl(x.url))+'" target="_blank" rel="noopener">🔗 '+esc(x.ul || "فتح الرابط")+'</a></div>':'')+'<div class="hint">التصنيف: '+evCatSelect(x.cat || "", 'data-evc="'+i+'"')+' العدد: <input type="number" min="1" style="width:70px" data-evn="'+i+'" value="'+(x.cnt === undefined ? 1 : x.cnt)+'"> المستفيدات: <input type="number" min="0" style="width:80px" data-evb="'+i+'" value="'+(+x.ben || 0)+'"></div>'+thumbsStaff(x.fs, i)+' <button class="btn small ghost" type="button" data-act="evpub" data-i="'+i+'">'+(x.pub?'👁 يظهر للطالبات وأولياء الأمور — إخفاء':'🔒 مخفي — إظهار للجميع')+'</button>'+rmBtn("evidence",pid,i)+'</li>'; }).join("")+'</ul>' : '<p class="hint">لا توجد شواهد بعد.</p>')+
+        h += (ev.length ? '<ul class="plain">'+ev.map(function(x,i){ return '<li><b>'+esc(x.t)+'</b>'+(x.dt?' · '+esc(x.dt):'')+(x.d?'<div style="font-size:14px">'+esc(x.d)+'</div>':'')+(safeUrl(x.url)?'<div style="font-size:14px"><a href="'+esc(safeUrl(x.url))+'" target="_blank" rel="noopener">🔗 '+esc(x.ul || "فتح الرابط")+'</a></div>':'')+'<div class="hint">التصنيف: '+evCatSelect(x.cat || "", 'data-evc="'+i+'"')+' <label style="white-space:nowrap"><input type="checkbox" data-evnc="'+i+'"'+(x.nc ? '' : ' checked')+'> يُحسب ضمن البرامج</label> العدد: <input type="number" min="1" style="width:70px" data-evn="'+i+'" value="'+(x.cnt === undefined ? 1 : x.cnt)+'"> المستفيدات: <input type="number" min="0" style="width:80px" data-evb="'+i+'" value="'+(+x.ben || 0)+'"></div>'+thumbsStaff(x.fs, i)+' <button class="btn small ghost" type="button" data-act="evpub" data-i="'+i+'">'+(x.pub?'👁 يظهر للطالبات وأولياء الأمور — إخفاء':'🔒 مخفي — إظهار للجميع')+'</button>'+rmBtn("evidence",pid,i)+'</li>'; }).join("")+'</ul>' : '<p class="hint">لا توجد شواهد بعد.</p>')+
           '<details class="addbox"><summary>+ إضافة شاهد</summary><form class="form" data-f="ev"><div class="row"><label for="evT">عنوان الشاهد<input type="text" id="evT" required placeholder="مثال: محاضرة توعوية"></label><label for="evDt">التاريخ<input type="text" id="evDt" placeholder="مثال: ١٤٤٨/٠٣/١٥"></label></div><label for="evD">وصف مختصر<textarea id="evD"></textarea></label><label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="evP"> يظهر هذا الشاهد لأولياء الأمور والطالبات</label><div class="row"><label for="evC">التصنيف في إحصائيات الرئيسية'+evCatSelect("", 'id="evC"')+'</label><label for="evN">العدد (مثل ٦ لقاءات)<input type="number" id="evN" min="1" value="1"></label><label for="evB">عدد المستفيدات<input type="number" id="evB" min="0" value="0"></label></div><div class="row"><label for="evU">رابط موقع أو منصة (اختياري)<input type="url" id="evU" dir="ltr" placeholder="https://"></label><label for="evUl">اسم الرابط<input type="text" id="evUl" placeholder="مثال: منصة سَعَة"></label></div>'+dropZone("ev")+'<div><button class="btn" type="submit">إضافة الشاهد</button></div></form></details>';
       } else if(stTab === "ini"){
         h += (ini.length ? '<ul class="plain">'+ini.map(function(x,i){ return '<li><b>'+esc(x.t)+'</b>'+(x.type?' <span class="tag">'+esc(x.type)+'</span>':'')+(safeUrl(x.url)?' <a href="'+esc(safeUrl(x.url))+'" target="_blank" rel="noopener">فتح الرابط ‹</a>':'')+' <select data-ini="'+pid+'|'+i+'" aria-label="حالة المبادرة">'+INI_ST.map(function(o){ return '<option'+(o===x.st?' selected':'')+'>'+o+'</option>'; }).join("")+'</select>'+(x.d?'<div style="font-size:14px">'+esc(x.d)+'</div>':'')+thumbs(x.fs)+'<div><label class="check"><input type="checkbox" data-pubini="'+pid+'|'+i+'"'+(x.pub?' checked':'')+'>ظاهرة للطالبات</label>'+rmBtn("initiatives",pid,i)+'</div></li>'; }).join("")+'</ul>' : '<p class="hint">لا توجد مبادرات بعد.</p>')+
@@ -2226,6 +2227,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     else if(a.dataset.act === "video") makeVideo();
   });
   $("#progDetail").addEventListener("change", function(e){
+    if(e.target.dataset && e.target.dataset.evnc !== undefined){ var en = (PROG.evidence[curPid] || [])[+e.target.dataset.evnc]; if(en){ if(e.target.checked) delete en.nc; else en.nc = true; saveStf(); } return; }
     if(e.target.dataset && e.target.dataset.evb !== undefined){ var eb = (PROG.evidence[curPid] || [])[+e.target.dataset.evb]; if(eb){ eb.ben = Math.max(0, +e.target.value || 0); saveStf(); } return; }
     var ec = e.target.dataset && (e.target.dataset.evc !== undefined || e.target.dataset.evn !== undefined);
     if(ec){ var ix = e.target.dataset.evc !== undefined ? +e.target.dataset.evc : +e.target.dataset.evn, ev = (PROG.evidence[curPid] || [])[ix];
