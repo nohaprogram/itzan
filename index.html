@@ -798,7 +798,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
   <div class="tabs" id="tfTabs" role="group" aria-label="اختيار النموذج" style="margin-top:16px">
     <button class="tab" type="button" data-t="weekly" aria-pressed="true">البيان الأسبوعي للمقصرات</button>
     <button class="tab" type="button" data-t="plan" aria-pressed="false">سجل الخطة العلاجية</button>
-    <button class="tab" type="button" data-t="honor" aria-pressed="false">المتفوقات والمتحسنات</button>
+    <button class="tab" type="button" data-t="honor" aria-pressed="false">المتفوقات والمتحسنات والمتأخرات</button>
   </div>
   <div id="tfWeekly"></div>
   <div id="tfPlan" hidden></div>
@@ -1718,7 +1718,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
       procs:PROC.map(function(){ return {on:false, time:"", st:"", why:""}; }), procOther:"",
       fu:[1,2,3].map(function(){ return {date:"", lv:"", res:""}; }), imp:"auto"};
   }
-  var S = {T:{teacher:"", subject:"", classes:[], all:false}, w:{term:"الأول", week:"", date:hdate(), rows:[newRow()]}, p:freshPlan(), h:{term:"الأول", date:hdate(), top:[], imp:[]}};
+  var S = {T:{teacher:"", subject:"", classes:[], all:false}, w:{term:"الأول", week:"", date:hdate(), rows:[newRow()]}, p:freshPlan(), h:{term:"الأول", date:hdate(), top:[], imp:[], lag:[]}};
   try{
     var sv = JSON.parse(localStorage.getItem("itizan-teacher") || "{}");
     if(sv.teacher) S.T.teacher = sv.teacher; if(sv.subject) S.T.subject = sv.subject; if(sv.classes && sv.classes.length) S.T.classes = sv.classes.map(ncls); S.T.all = !!sv.all;
@@ -1836,6 +1836,8 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
   }
   function tfRedrawAll(){ saveTeacher(); renderTop(); renderWeekly(); renderPlan(); renderHonor(); }
   /* المتفوقات والمتحسنات */
+  var LAGR = ["ضعف الأساسيات","كثرة الغياب","عدم أداء الواجبات","ضعف التركيز","ظروف أسرية","ظروف صحية","ضعف الدافعية","بطء الاستيعاب"];
+  var LAGA = ["خطة علاجية","تواصل مع ولي الأمر","حصص تقوية","إحالة لموجهة الطالبات","متابعة أسبوعية"];
   var RF = ["شهادة شكر","تعزيز معنوي أمام الزميلات","هدية رمزية","إذاعة مدرسية","رسالة لولي الأمر","لوحة الشرف"];
   function hdiff(r){
     var a = parseFloat(lat(r.prev || "")), b = parseFloat(lat(r.cur || ""));
@@ -1867,7 +1869,19 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
         inp("hIR"+i, p+".rf", "التعزيز المقدَّم", r.rf, "اكتبي أو اختاري من الخيارات")+
         '<div class="chips">'+RF.map(function(t){ return '<button type="button" class="tg sm" data-add="'+p+'.rf" data-text="'+ea(t)+'">'+ea(t)+'</button>'; }).join("")+'</div></div>';
     });
-    o += '<div class="actions"><button type="button" class="btn ghost" data-act="hadd" data-k="imp">+ إضافة متحسنة</button>'+
+    o += '<div class="actions"><button type="button" class="btn ghost" data-act="hadd" data-k="imp">+ إضافة متحسنة</button></div>';
+    o += '<h3 class="section-title">المتأخرات دراسيًا <span class="hint">(من يحتجن متابعة وعلاجًا)</span></h3>';
+    h.lag.forEach(function(r, i){
+      var s = stu(r.sid), p = "h.lag."+i;
+      o += '<div class="stu"><div class="stu-head"><span class="stu-num">'+(i+1)+'</span>'+stuSelect("hL"+i, p+".sid", r.sid)+(s ? '<span class="chip">'+ea(s.cls)+'</span>' : '')+
+        '<button type="button" class="x" data-act="hdel" data-k="lag" data-i="'+i+'">حذف</button></div>'+
+        '<div class="row">'+inp("hLS"+i, p+".subj", "المادة", r.subj, "مثال: الرياضيات", ' list="tfSubjects"')+inp("hLG"+i, p+".grade", "الدرجة الحالية", r.grade, "", ' inputmode="decimal"')+'</div>'+
+        inp("hLR"+i, p+".rs", "سبب التأخر", r.rs, "اكتبي أو اختاري من الخيارات")+
+        '<div class="chips">'+LAGR.map(function(t){ return '<button type="button" class="tg sm" data-add="'+p+'.rs" data-text="'+ea(t)+'">'+ea(t)+'</button>'; }).join("")+'</div>'+
+        inp("hLA"+i, p+".act", "الإجراء المتخذ", r.act, "اكتبي أو اختاري من الخيارات")+
+        '<div class="chips">'+LAGA.map(function(t){ return '<button type="button" class="tg sm" data-add="'+p+'.act" data-text="'+ea(t)+'">'+ea(t)+'</button>'; }).join("")+'</div></div>';
+    });
+    o += '<div class="actions"><button type="button" class="btn ghost" data-act="hadd" data-k="lag">+ إضافة متأخرة</button>'+
       '<button type="button" class="btn" data-act="dl-honor">تنزيل البيان بصيغة Word</button></div>'+
       '<p class="hint" style="margin-top:8px">الصفحة لا تحفظ ما تكتبينه بعد إغلاقها، فنزّلي الملف عند الانتهاء.</p>';
     $("#tfHonor").innerHTML = o;
@@ -1888,7 +1902,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     if(!window.JSZip) throw new Error("jszip");
     var h = S.h, T = S.T, body = '';
     body += wp("مدارس الذكر للبنات – المرحلة الثانوية", {c:true, b:true, z:28});
-    body += wp("بيان الطالبات المتفوقات والمتحسنات", {c:true, b:true, z:34, sa:120});
+    body += wp("بيان الطالبات المتفوقات والمتحسنات والمتأخرات", {c:true, b:true, z:34, sa:120});
     body += wp("المعلمة: "+(T.teacher || "........................")+"      المادة: "+(T.subject || "........................"), {z:24});
     body += wp("الفصل الدراسي: "+h.term+"      التاريخ: "+(h.date || "........")+" هـ", {z:24, sa:120});
     var top = h.top.filter(function(r){ return r.sid; });
@@ -1897,7 +1911,10 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     var imp = h.imp.filter(function(r){ return r.sid; });
     body += wp("ثانيًا: المتحسنات (لتعزيزهن)", {b:true, z:26, sb:240});
     body += wt([450,2500,1250,1450,1000,1000,1100,1750], [["م","اسم الطالبة","الفصل","المادة","الدرجة السابقة","الدرجة الحالية","التحسّن","التعزيز"]].concat(imp.map(function(r, i){ var s = stu(r.sid) || {}; return [String(i+1), s.n || "", s.cls || "", r.subj || T.subject || "", lat(r.prev || ""), lat(r.cur || ""), hdiff(r).txt === "—" ? "" : hdiff(r).txt, r.rf || ""]; })));
-    body += wp("المعلمة: ..............................          موجهة الطالبات: ..............................", {z:24, sb:360});
+    var lag = h.lag.filter(function(r){ return r.sid; });
+    body += wp("ثالثًا: المتأخرات دراسيًا", {b:true, z:26, sb:240});
+    body += wt([450,2300,1200,1300,900,2200,2150], [["م","اسم الطالبة","الفصل","المادة","الدرجة الحالية","سبب التأخر","الإجراء المتخذ"]].concat(lag.map(function(r, i){ var s = stu(r.sid) || {}; return [String(i+1), s.n || "", s.cls || "", r.subj || T.subject || "", lat(r.grade || ""), r.rs || "", r.act || ""]; })));
+    body += wp("المعلمة: ..............................          توجيه الطالبات: ..............................", {z:24, sb:360});
     var doc = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>'+body+'<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="900" w:right="700" w:bottom="900" w:left="700" w:header="500" w:footer="500" w:gutter="0"/><w:bidi/></w:sectPr></w:body></w:document>';
     var z = new JSZip();
     z.file("[Content_Types].xml", '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>');
@@ -1906,11 +1923,11 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     return z.generateAsync({type:"uint8array", compression:"DEFLATE"});
   }
   async function doHonor(){
-    if(!S.h.top.some(function(r){ return r.sid; }) && !S.h.imp.some(function(r){ return r.sid; })){ toast("اختاري طالبة واحدة على الأقل"); return; }
+    if(!["top","imp","lag"].some(function(k){ return S.h[k].some(function(r){ return r.sid; }); })){ toast("اختاري طالبة واحدة على الأقل"); return; }
     try{
       var dl = (window.claude && window.claude.use) ? await window.claude.use("downloads") : null;
       if(!dl){ toast("تعذّر التنزيل في هذا المتصفح"); return; }
-      await dl.save({filename:"المتفوقات والمتحسنات.docx", data:await honorDocx()});
+      await dl.save({filename:"المتفوقات والمتحسنات والمتأخرات.docx", data:await honorDocx()});
       toast("تم تنزيل الملف");
     }catch(e){ if(e && e.code === "declined") return; toast("تعذر تجهيز الملف، حاولي مرة أخرى"); }
   }
@@ -2066,7 +2083,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     }
     if((b = e.target.closest("[data-act]"))){
       var a = b.dataset.act, i = +b.dataset.i;
-      if(a === "hadd"){ S.h[b.dataset.k].push(b.dataset.k === "top" ? {sid:"", subj:S.T.subject || "", full:""} : {sid:"", subj:S.T.subject || "", prev:"", cur:"", rf:""}); renderHonor(); return; }
+      if(a === "hadd"){ S.h[b.dataset.k].push(b.dataset.k === "top" ? {sid:"", subj:S.T.subject || "", full:""} : b.dataset.k === "lag" ? {sid:"", subj:S.T.subject || "", grade:"", rs:"", act:""} : {sid:"", subj:S.T.subject || "", prev:"", cur:"", rf:""}); renderHonor(); return; }
       if(a === "hdel"){ S.h[b.dataset.k].splice(i, 1); renderHonor(); return; }
       if(a === "dl-honor"){ doHonor(); return; }
       if(a === "add"){ if(S.w.rows.length < 10){ S.w.rows.push(newRow()); renderWeekly(); } }
