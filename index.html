@@ -2878,8 +2878,8 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     });
   }
   function hstDraw(){
-    $("#hStats").innerHTML = (HSTTOT > 0 ? '<div class="hst tot"'+pst(5)+'><div class="ico">'+icoSvg("star")+'</div><b>'+arNum(HSTTOT)+'</b><strong>البرامج</strong></div>' : '')+HST.map(function(x,i){
-      var det = x.s || (x.auto && x.auto.length ? x.auto.join(" · ") : "");
+    $("#hStats").innerHTML = (HSTTOT > 0 ? '<div class="hst tot"'+pst(5)+'><div class="ico">'+icoSvg("star")+'</div><b>'+arNum(HSTTOT)+'</b><strong>البرامج والفعاليات</strong></div>' : '')+HST.map(function(x,i){
+      var det = x.s || (x.auto && x.auto.length && String(x.l).indexOf("استضاف") < 0 ? x.auto.join(" · ") : "");
       return '<div class="hst"'+pst(i)+'><div class="ico">'+icoSvg(x.ic)+'</div><b>'+arNum(+x.n || 0)+'</b><strong>'+esc(x.l)+'</strong>'+(det?'<small>'+esc(det)+'</small>':'')+'</div>'; }).join("");
     if ($("#hProgs")) $("#hProgs").innerHTML = HPROGS.map(function(x,i){ return '<div class="hst"'+pst(i+2)+'><b>'+arNum(x.n)+'</b><strong>'+esc(x.p)+'</strong></div>'; }).join("");
     if(isStaff) $("#hsRows").innerHTML = HST.map(function(x,i){ return '<div class="hsrow"><input type="number" min="0" data-hn="'+i+'" value="'+(+x.m||0)+'" aria-label="عدد يدوي إضافي" title="عدد يدوي يُضاف إلى المحسوب من الشواهد"><input type="text" data-hl="'+i+'" value="'+esc(x.l)+'" aria-label="العنوان" placeholder="العنوان"><input type="text" data-hs="'+i+'" value="'+esc(x.s||"")+'" aria-label="التفاصيل" placeholder="التفاصيل (إن تُرك فارغًا تُكتب أسماء الشواهد تلقائيًا)"><select data-hi="'+i+'" aria-label="الأيقونة">'+Object.keys(ICONS).map(function(k){ return '<option value="'+k+'"'+(x.ic===k?' selected':'')+'>'+ICONS[k][0]+'</option>'; }).join("")+'</select><button class="x" type="button" data-hd="'+i+'">حذف</button></div>'; }).join("");
