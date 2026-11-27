@@ -2848,6 +2848,19 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
       }
     }catch(e){ DB = null; }
     applyRole();
+    function prefillMe(){
+      var em = ""; try{ em = (JSON.parse(localStorage.getItem("itzan.session.v1")||"{}").email || ""); }catch(e){}
+      var m = em.match(/^t(\d+)@teachers\.example\.com$/i); if(!m) return false;
+      var t = teachers.filter(function(x){ return String(x.id) === m[1]; })[0]; if(!t) return false;
+      if(!S.T.teacher) S.T.teacher = t.n; if(!S.T.subject) S.T.subject = t.sub;
+      if(!(S.T.classes || []).length && t.cls){
+        var have = {}; CLASSES.forEach(function(c){ have[c[0]] = 1; }); students.forEach(function(x){ have[x.cls] = 1; });
+        var pre = nclsList(t.cls).split(/\s*[،,]\s*/).map(function(x){ return x.trim(); }).filter(function(x){ return have[x]; });
+        if(pre.length){ S.T.classes = pre; S.T.all = false; }
+      }
+      tfRedrawAll(); return true;
+    }
+    try{ if(!prefillMe()) setTimeout(function(){ try{ prefillMe(); }catch(e){} }, 3000); }catch(e){}
     if(!DB) return;
     booked = {}; bookDraw();
     if(myId){
