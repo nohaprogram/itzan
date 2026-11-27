@@ -1954,7 +1954,8 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
   function renderLag(){
     var h = S.h, o = '<div class="card form"><div class="row"><label for="lTerm">الاختبار<select id="lTerm" data-bind="h.term">'+["الأول","الثاني","الثالث"].map(function(t){ return '<option'+(t===h.term?' selected':'')+'>'+t+'</option>'; }).join("")+'</select></label>'+
       inp("lDate","h.date","التاريخ (هجري)",h.date,"يوم / شهر / سنة")+'</div></div>';
-    o += '<div class="card form"><b>نموذج متابعة المستوى التحصيلي (مرمّز، فارغ)</b><p class="hint" style="margin:4px 0 8px">النسخة المضبوطة بترميزها، للتعبئة اليدوية أو في Word. لا تحتوي أسماء طالبات.</p><a class="btn ghost" href="/forms/%D9%85%D8%AA%D8%A7%D8%A8%D8%B9%D8%A9-%D8%A7%D9%84%D9%85%D8%B3%D8%AA%D9%88%D9%89-%D8%A7%D9%84%D8%AA%D8%AD%D8%B5%D9%8A%D9%84%D9%8A-%D9%81%D8%A7%D8%B1%D8%BA.docx" download>تنزيل النموذج الفارغ (Word)</a></div>';
+    o += '<div class="card form"><b>نموذج متابعة المستوى التحصيلي (مرمّز، فارغ)</b><p class="hint" style="margin:4px 0 8px">النسخة المضبوطة بترميزها، للتعبئة اليدوية أو في Word. لا تحتوي أسماء طالبات.</p><a class="btn ghost" href="/forms/%D9%85%D8%AA%D8%A7%D8%A8%D8%B9%D8%A9-%D8%A7%D9%84%D9%85%D8%B3%D8%AA%D9%88%D9%89-%D8%A7%D9%84%D8%AA%D8%AD%D8%B5%D9%8A%D9%84%D9%8A-%D9%81%D8%A7%D8%B1%D8%BA.docx" download>تنزيل النموذج الفارغ (Word)</a>'+
+      (isStaff && isCounselor ? '<div class="row" style="margin-top:10px"><label for="cfExam">الدرجة المسجلة من المعلمات هي درجة<select id="cfExam"><option value="mid">الاختبار النصفي</option><option value="fin">الاختبار النهائي</option></select></label></div><button type="button" class="btn" id="cfDl" style="margin-top:8px">تنزيل النموذج معبّأً من بيانات المعلمات</button><p class="hint" id="cfInfo" style="margin:6px 0 0"></p>' : '')+'</div>';
     o += '<p class="hint">سجّلي الطالبات المتأخرات دراسيًا في مادتك (حتى 14 طالبة)، ويُنزَّل البيان بنفس نموذج المدرسة.</p>';
     h.lag.forEach(function(r, i){
       var s = stu(r.sid), p = "h.lag."+i;
@@ -2787,6 +2788,48 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     try{ await repSave("تقرير وحدة توجيه الطالبات.docx", await repDocx()); toast("تم تنزيل التقرير"); }
     catch(e){ if(e && e.code === "declined") return; toast("تعذر تجهيز التقرير"); }
   });
+  /* تعبئة نموذج «متابعة المستوى التحصيلي» من بيانات المعلمات */
+  async function codedFilled(exam){
+    if(!window.JSZip) throw new Error("jszip");
+    var buf = await (await fetch("/forms/"+encodeURIComponent("متابعة-المستوى-التحصيلي-فارغ.docx"))).arrayBuffer();
+    var z = await JSZip.loadAsync(buf), xml = await z.file("word/document.xml").async("string");
+    var NS = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
+    var doc = new DOMParser().parseFromString(xml, "application/xml");
+    var tbl = doc.getElementsByTagNameNS(NS, "tbl")[0], trs = Array.prototype.slice.call(tbl.getElementsByTagNameNS(NS, "tr"));
+    var tpl = trs[trs.length - 1];
+    trs.slice(2).forEach(function(r){ tbl.removeChild(r); });
+    function put(tc, text){
+      if(text === "" || text == null) return;
+      var p = tc.getElementsByTagNameNS(NS, "p")[0]; if(!p) return;
+      var r = doc.createElementNS(NS, "w:r"), pr = doc.createElementNS(NS, "w:rPr"), f = doc.createElementNS(NS, "w:rFonts");
+      ["ascii","hAnsi","cs"].forEach(function(a){ f.setAttributeNS(NS, "w:"+a, "Traditional Arabic"); });
+      pr.appendChild(f);
+      ["sz","szCs"].forEach(function(n){ var e = doc.createElementNS(NS, "w:"+n); e.setAttributeNS(NS, "w:val", "22"); pr.appendChild(e); });
+      pr.appendChild(doc.createElementNS(NS, "w:rtl")); r.appendChild(pr);
+      var t = doc.createElementNS(NS, "w:t"); t.setAttribute("xml:space", "preserve"); t.textContent = text; r.appendChild(t); p.appendChild(r);
+    }
+    var list = [];
+    lagAgg().forEach(function(o){ o.subs.forEach(function(x, i){ list.push({n:i === 0 ? o.n : "", s:x.s || x.t || "", g:x.g || "", rs:x.rs || "", term:x.term}); }); });
+    var n = Math.max(list.length, 4);
+    for(var i = 0; i < n; i++){
+      var tr = tpl.cloneNode(true), tcs = tr.getElementsByTagNameNS(NS, "tc"), it = list[i];
+      if(it){
+        var base = it.term === "الأول" ? 6 : 0;
+        put(tcs[12], it.n); put(tcs[base + 5], it.s);
+        put(tcs[base + (exam === "fin" ? 2 : 4)], it.g); put(tcs[base], it.rs);
+        if(it.term === "الثالث") put(tcs[0], "الفصل الثالث");
+      }
+      tbl.appendChild(tr);
+    }
+    z.file("word/document.xml", new XMLSerializer().serializeToString(doc));
+    return z.generateAsync({type:"uint8array", compression:"DEFLATE"});
+  }
+  document.addEventListener("click", async function(e){
+    var b = e.target.closest && e.target.closest("#cfDl"); if(!b) return;
+    if(!lagAgg().length){ toast("لا توجد بيانات من المعلمات بعد"); return; }
+    try{ await repSave("متابعة المستوى التحصيلي.docx", await codedFilled($("#cfExam").value)); audit("تنزيل ملف", "متابعة المستوى التحصيلي (معبّأ)"); toast("تم تنزيل النموذج"); }
+    catch(err){ if(err && err.code === "declined") return; toast("تعذر تجهيز النموذج"); }
+  });
   var lagDl = $("#lagDl");
   if(lagDl) lagDl.addEventListener("click", async function(){
     if(!lagAgg().length){ toast("لا توجد بيانات بعد"); return; }
@@ -2798,7 +2841,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     var m = {};
     LAGS.forEach(function(d){ (d.rows || []).forEach(function(r){
       var k = r.sid || r.n; if(!k) return; var o = m[k] || (m[k] = {n:r.n, cls:r.cls, subs:[]});
-      o.subs.push({t:d.n, s:d.subject, g:r.grade, rs:r.rs});
+      o.subs.push({t:d.n, s:d.subject, g:r.grade, rs:r.rs, term:d.term});
     }); });
     return Object.keys(m).map(function(k){ return m[k]; }).sort(function(a,b){ return b.subs.length - a.subs.length || String(a.n).localeCompare(b.n, "ar"); });
   }
