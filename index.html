@@ -2856,7 +2856,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     });
     onDoc("config/homeStats", function(sn){
       if(sn.exists && !isStaff && sn.data().tot !== undefined){ HSTTOT = sn.data().tot; HPROGS = sn.data().progs || []; }
-      if(sn.exists){ var hd = sn.data(); HSTBM = +hd.bm || 0; HSTOV = +hd.ov || 0; if(!isStaff && HSTOV > 0) HSTTOT = HSTOV; if($("#hsOv")) $("#hsOv").value = HSTOV || ""; if(!isStaff) HSTBEN = +hd.ben || 0; if($("#hsBm")) $("#hsBm").value = HSTBM; reachDraw(); }
+      if(sn.exists){ var hd = sn.data(); HSTBM = +hd.bm || 0; HSTOV = (hd.ov === undefined ? 16 : (+hd.ov || 0)); if(!isStaff && HSTOV > 0) HSTTOT = HSTOV; if($("#hsOv")) $("#hsOv").value = HSTOV || ""; if(!isStaff) HSTBEN = +hd.ben || 0; if($("#hsBm")) $("#hsBm").value = HSTBM; reachDraw(); }
       if(sn.exists && sn.data().people && !isStaff){ PEOPLE = sn.data().people; peopleDraw(); }
       if(sn.exists && sn.data().items && sn.data().items.length){ HST = sn.data().items.map(function(x){ return {l:x.l, s:x.s || "", m:x.m || 0, n:x.n || 0, auto:x.a || [], ic:x.ic || "star"}; }); if(isStaff){ hstCalc(); } hstDraw(); }
     });
@@ -3048,7 +3048,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
   var PAL_ONE = true;
   function pst(i){ var c = PAL_ONE ? ["#DDF0EA","#0d5c57"] : PAL[i % PAL.length]; return ' style="--f:'+c[0]+';--k:'+c[1]+'"'; }
   function evCats(){ return HST.map(function(x){ return x.l; }); }
-  var HSTBEN = 0, HSTBM = 0, HSTOV = 0, VIS = null;
+  var HSTBEN = 0, HSTBM = 0, HSTOV = 16, VIS = null;
   function reachDraw(){
     var c = []; var tb = (+HSTBEN || 0) + (+HSTBM || 0);
     if(VIS && VIS.visitors !== undefined) c.push(['<b>'+arNum(+VIS.visitors || 0)+'</b><strong>عدد الزوار</strong>'+(VIS.visits ? '<small>'+arNum(+VIS.visits)+' زيارة</small>' : ''), 'eye']);
