@@ -710,6 +710,13 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
         <label><input type="radio" name="kind" value="اقتراح">اقتراح</label>
         <label><input type="radio" name="kind" value="طلب">طلب</label>
         <label><input type="radio" name="kind" value="استشارة">استشارة</label>
+        <label><input type="radio" name="kind" value="شكر وتقدير">شكر وتقدير</label>
+      </div>
+      <div class="row" id="thxFields" hidden>
+        <label for="thxTo">الشكر موجَّه إلى
+          <select id="thxTo"><option>معلمة</option><option>إدارية</option><option>مشرفة</option><option>المدرسة عمومًا</option><option>شخص آخر</option></select>
+        </label>
+        <label for="thxName">اسمها (اختياري)<input type="text" id="thxName" autocomplete="off" placeholder="مثال: أ. فلانة"></label>
       </div>
       <div class="psy-note" id="psyNote" hidden>
         <div><b>الاستشارة تصل إلى موجهة الطالبات وحدها.</b> إذا اخترتِ إرسالها بدون اسم فلن تتمكن موجهة الطالبات من التواصل معك.</div>
@@ -1218,7 +1225,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
   function inboxDraw(){
     $("#inboxTable").innerHTML = '<thead><tr><th>النوع</th><th>المرسِل</th><th>التفاصيل</th><th>الحالة</th></tr></thead><tbody>'+
       inbox.map(function(r){
-        return '<tr><td>'+esc(r.k)+(r.k==="استشارة"?(r.ct?' · '+esc(r.ct):'')+' <span class="pill warn">خاصة</span>':'')+(r.u?' <span class="pill bad">عاجلة</span>':'')+'</td><td>'+esc(r.f)+(r.nm?'<div>'+esc(r.nm)+matchTag(r.nm)+'</div>':'')+'</td><td>'+esc(r.t)+(r.c?'<div style="font-size:13px;color:var(--muted)">التواصل المفضل: '+esc(r.c)+(r.m?' · الموعد: '+esc(r.m):'')+'</div>':'')+'</td><td><select data-ist="'+r.id+'" aria-label="حالة الرسالة">'+
+        return '<tr><td>'+esc(r.k)+(r.k==="استشارة"?(r.ct?' · '+esc(r.ct):'')+' <span class="pill warn">خاصة</span>':'')+(r.k==="شكر وتقدير"?' <span class="pill good">'+esc("إلى: "+(r.to||"")+(r.tn?" — "+r.tn:""))+'</span>':'')+(r.u?' <span class="pill bad">عاجلة</span>':'')+'</td><td>'+esc(r.f)+(r.nm?'<div>'+esc(r.nm)+matchTag(r.nm)+'</div>':'')+'</td><td>'+esc(r.t)+(r.c?'<div style="font-size:13px;color:var(--muted)">التواصل المفضل: '+esc(r.c)+(r.m?' · الموعد: '+esc(r.m):'')+'</div>':'')+'</td><td><select data-ist="'+r.id+'" aria-label="حالة الرسالة">'+
           INST.map(function(s){ return '<option'+(s===r.st?' selected':'')+'>'+s+'</option>'; }).join("")+'</select><div style="margin-top:6px"><button class="x" type="button" data-idel="'+r.id+'" data-io="'+esc(r._o||"")+'">حذف</button></div></td></tr>';
       }).join("")+'</tbody>';
     var done = inbox.filter(function(r){ return r.st === INST[2]; }).length;
@@ -1256,6 +1263,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     var anon = $("#inboxAnon").checked, from = anon ? "بدون اسم" : $("#inboxFrom").value, nm = anon ? "" : $("#inboxName").value.trim();
     var when = meet ? fmtDay.format(dayList[meetDay]) + " · " + meetSlot : "";
     var row = {id:nid(), k:kind, ct:psy ? $("#psyType").value : "", f:from, t:$("#inboxText").value.trim(), st:"جديدة", u:psy && $("#psyUrg").value === "عاجلة", c:psy ? $("#psyContact").value : "", m:when, nm:nm};
+    if(kind === "شكر وتقدير"){ row.to = $("#thxTo").value; row.tn = $("#thxName").value.trim(); }
     inbox.unshift(row); store("inbox", row).catch(sendFail);
     if(meet){
       booked[meetDay+"|"+meetSlot] = true;
@@ -1263,8 +1271,8 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
       bookings.push(bk0); store("bookings", bk0).catch(sendFail); storeSlot(meetDay, meetSlot);
       meetSlot = null; bookDraw();
     }
-    $("#inboxText").value = ""; $("#inboxName").value = ""; $("#inboxAnon").checked = false; inboxDraw(); meetSync();
-    toast(meet ? "تم حجز لقاء موجهة الطالبات" : psy ? "تم إرسال الاستشارة إلى موجهة الطالبات" : "تم الإرسال");
+    $("#inboxText").value = ""; $("#inboxName").value = ""; $("#thxName").value = ""; $("#inboxAnon").checked = false; inboxDraw(); meetSync();
+    toast(kind === "شكر وتقدير" ? "وصل شكرك، جزاكِ الله خيرًا" : meet ? "تم حجز لقاء موجهة الطالبات" : psy ? "تم إرسال الاستشارة إلى موجهة الطالبات" : "تم الإرسال");
   });
   inboxDraw();
 
@@ -1273,6 +1281,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     r.addEventListener("change", function(){
       var psy = $('input[name="kind"]:checked').value === "استشارة";
       $("#psyNote").hidden = !psy; $("#psyFields").hidden = !psy;
+      $("#thxFields").hidden = $('input[name="kind"]:checked').value !== "شكر وتقدير";
     });
   });
 
@@ -2638,7 +2647,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     var rg = repRange(), rows = [], inb = inbox.filter(function(r){ return repInRange(r, rg); });
     function cnt(arr, f){ return arr.filter(f).length; }
     rows.push(["الرسائل والطلبات الواردة", inb.length]);
-    ["شكوى","اقتراح","طلب","استشارة"].forEach(function(k){ var c = cnt(inb, function(r){ return r.k === k; }); if(c) rows.push(["   من نوع «"+k+"»", c]); });
+    ["شكوى","اقتراح","طلب","استشارة","شكر وتقدير"].forEach(function(k){ var c = cnt(inb, function(r){ return r.k === k; }); if(c) rows.push(["   من نوع «"+k+"»", c]); });
     rows.push(["   تمت معالجتها", cnt(inb, function(r){ return r.st === "تمت المعالجة"; })]);
     rows.push(["   استشارات عاجلة", cnt(inb, function(r){ return r.u; })]);
     rows.push(["الحجوزات (مواعيد)", cnt(bookings, function(r){ return repInRange(r, rg); })]);
