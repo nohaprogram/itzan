@@ -2889,6 +2889,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
       if(js === lastLists) return;
       lastLists = js; students = d.students || []; teachers = d.teachers || []; normPeople(); peopleSave();
       renderList(); if(typeof scalesDraw === "function") scalesDraw();
+      try{ inboxDraw(); bookDraw(); scTableDraw(); }catch(e){}
     });
   })();
 
