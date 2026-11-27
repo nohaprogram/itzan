@@ -155,6 +155,13 @@ td select{width:auto;padding:3px 8px;font-size:14px}
 .pcard>h3{font-size:18px}
 .proc{border:1px solid var(--line);border-radius:16px;padding:8px 12px;display:grid;gap:8px;background:var(--bg)}
 .proc.on{background:var(--soft);border-color:var(--brand)}
+.proc>.tg{width:100%;text-align:start;border:0;background:transparent;display:flex;align-items:center;gap:12px;padding:8px 4px;font-size:15px;border-radius:10px}
+.proc>.tg:hover{background:transparent}
+.proc>.tg[aria-pressed="true"]{background:transparent;color:var(--fg);font-weight:600}
+.proc>.tg::before{content:"";flex:none;width:22px;height:22px;border-radius:7px;border:2px solid var(--line);background:var(--surface);box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;font-size:14px;line-height:1;color:var(--brand-fg)}
+.proc>.tg[aria-pressed="true"]::before{content:"✓";background:var(--brand);border-color:var(--brand)}
+.proc.on>.proc-row{border-inline-start:3px solid var(--brand);padding-inline-start:12px;margin-inline-start:11px}
+.procsum{font-size:14px;color:var(--muted);margin:2px 0 8px}
 .proc-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
 .actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:8px}
 .hint{font-size:13px;color:var(--muted)}
@@ -1862,7 +1869,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
       inp("pWo","p.weakOther","أخرى (اختياري)",p.weakOther)+
       '<div><div class="sub-h">أسباب الضعف</div><div class="chips">'+CAUS.map(function(t,j){ return tg("p.caus."+j, t, p.caus[j]); }).join("")+'</div></div>'+
       inp("pCo2","p.causOther","أخرى (اختياري)",p.causOther)+
-      '<div><div class="sub-h">خطة العلاج: اختاري الإجراءات ثم اكتبي زمن التنفيذ</div></div>'+
+      '<div><div class="sub-h">خطة العلاج: اختاري الإجراءات ثم اكتبي زمن التنفيذ</div><div class="procsum">'+(p.procs.filter(function(x){ return x.on; }).length ? 'تم اختيار '+p.procs.filter(function(x){ return x.on; }).length+' من '+PROC.length+' إجراءات' : 'لم يُختر أي إجراء بعد')+'</div></div>'+
       PROC.map(function(t,j){
         var o = p.procs[j], b = "p.procs."+j, x = '<div class="proc'+(o.on?' on':'')+'">'+tg(b+".on", t, o.on);
         if(o.on){
@@ -3547,7 +3554,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     var base = p ? p.date : now; st.first = st.mode === "h" ? hFirst(base) : gFirst(base);
     draw(); box.hidden = false;
   }
-  document.addEventListener("focusin", function(e){ var el = e.target.closest && e.target.closest(SEL); if(el && el.tagName === "INPUT") el.setAttribute("inputmode", "none"); el.setAttribute("readonly", ""); });
+  document.addEventListener("focusin", function(e){ var el = e.target.closest && e.target.closest(SEL); if(el && el.tagName === "INPUT"){ el.setAttribute("inputmode", "none"); el.setAttribute("readonly", ""); } });
   document.addEventListener("click", function(e){ var el = e.target.closest && e.target.closest(SEL); if(el && el.tagName === "INPUT") open(el); });
 })();
 </script>
