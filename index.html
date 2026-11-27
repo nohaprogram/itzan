@@ -361,7 +361,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     <div class="hstats" id="hPeople"></div>
   </div>
   <details class="addbox" data-staff hidden><summary>تعديل الإحصائيات</summary>
-    <form class="form" id="hsForm"><label for="hsBm">مستفيدات إضافيات (إدخال يدوي، يُضاف إلى ما في الشواهد)<input type="number" id="hsBm" min="0" value="0"></label><div id="hsRows"></div>
+    <form class="form" id="hsForm"><label for="hsOv">عدد «البرامج والفعاليات» (يدوي — اتركيه فارغًا ليُحسب تلقائيًا من الشواهد)<input type="number" id="hsOv" min="0" placeholder="تلقائي"></label><label for="hsBm">مستفيدات إضافيات (إدخال يدوي، يُضاف إلى ما في الشواهد)<input type="number" id="hsBm" min="0" value="0"></label><div id="hsRows"></div>
       <div><button class="btn small ghost" type="button" id="hsAdd">+ إضافة بند</button> <button class="btn" type="submit">حفظ</button></div></form>
   </details>
 
@@ -2856,7 +2856,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     });
     onDoc("config/homeStats", function(sn){
       if(sn.exists && !isStaff && sn.data().tot !== undefined){ HSTTOT = sn.data().tot; HPROGS = sn.data().progs || []; }
-      if(sn.exists){ var hd = sn.data(); HSTBM = +hd.bm || 0; if(!isStaff) HSTBEN = +hd.ben || 0; if($("#hsBm")) $("#hsBm").value = HSTBM; reachDraw(); }
+      if(sn.exists){ var hd = sn.data(); HSTBM = +hd.bm || 0; HSTOV = +hd.ov || 0; if(!isStaff && HSTOV > 0) HSTTOT = HSTOV; if($("#hsOv")) $("#hsOv").value = HSTOV || ""; if(!isStaff) HSTBEN = +hd.ben || 0; if($("#hsBm")) $("#hsBm").value = HSTBM; reachDraw(); }
       if(sn.exists && sn.data().people && !isStaff){ PEOPLE = sn.data().people; peopleDraw(); }
       if(sn.exists && sn.data().items && sn.data().items.length){ HST = sn.data().items.map(function(x){ return {l:x.l, s:x.s || "", m:x.m || 0, n:x.n || 0, auto:x.a || [], ic:x.ic || "star"}; }); if(isStaff){ hstCalc(); } hstDraw(); }
     });
@@ -3047,7 +3047,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
   var PAL_ONE = true;
   function pst(i){ var c = PAL_ONE ? ["#DDF0EA","#0d5c57"] : PAL[i % PAL.length]; return ' style="--f:'+c[0]+';--k:'+c[1]+'"'; }
   function evCats(){ return HST.map(function(x){ return x.l; }); }
-  var HSTBEN = 0, HSTBM = 0, VIS = null;
+  var HSTBEN = 0, HSTBM = 0, HSTOV = 0, VIS = null;
   function reachDraw(){
     var c = []; var tb = (+HSTBEN || 0) + (+HSTBM || 0);
     if(VIS && VIS.visitors !== undefined) c.push(['<b>'+arNum(+VIS.visitors || 0)+'</b><strong>عدد الزوار</strong>'+(VIS.visits ? '<small>'+arNum(+VIS.visits)+' زيارة</small>' : ''), 'eye']);
@@ -3056,7 +3056,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     w.innerHTML = c.map(function(x,i){ return '<div class="hst"'+pst(i+3)+'><div class="ico">'+icoSvg(x[1])+'</div>'+x[0]+'</div>'; }).join('');
   }
   function hstCalc(){
-    var seen = {}, dc = 0; Object.keys(PROG.evidence).forEach(function(pid){ PROG.evidence[pid].forEach(function(e){ if(e.nc) return; var k = pid+'|'+String(e.t||'').replace(/\s+/g,' ').trim(); if(!seen[k]){ seen[k] = 1; dc++; } }); }); if(isStaff){ HSTTOT = dc; HPROGS = Object.keys(PIDS).map(function(pid){ var n = (PROG.evidence[pid] || []).filter(function(e){ return !e.nc; }).length; return {p:PIDS[pid].t, n:n}; }).filter(function(x){ return x.n > 0; }); }
+    var seen = {}, dc = 0; Object.keys(PROG.evidence).forEach(function(pid){ PROG.evidence[pid].forEach(function(e){ if(e.nc) return; var k = pid+'|'+String(e.t||'').replace(/\s+/g,' ').trim(); if(!seen[k]){ seen[k] = 1; dc++; } }); }); if(isStaff){ HSTTOT = (+HSTOV > 0 ? +HSTOV : dc); HPROGS = Object.keys(PIDS).map(function(pid){ var n = (PROG.evidence[pid] || []).filter(function(e){ return !e.nc; }).length; return {p:PIDS[pid].t, n:n}; }).filter(function(x){ return x.n > 0; }); }
     var bsum = 0; Object.keys(PROG.evidence).forEach(function(pid){ PROG.evidence[pid].forEach(function(e){ bsum += (+e.ben || 0); }); }); if(isStaff){ HSTBEN = bsum; }
     HST.forEach(function(x){
       var cnt = 0, names = [];
@@ -3078,7 +3078,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     hstCalc();
     var js = JSON.stringify(HST.map(function(x){ return {l:x.l, s:x.s||"", m:+x.m||0, n:x.n, a:x.auto||[], ic:x.ic||"star"}; }));
     if(!force && (HSTTOT + js + JSON.stringify(HPROGS) + HSTBEN + '|' + HSTBM) === hstLast) return; hstLast = HSTTOT + js + JSON.stringify(HPROGS) + HSTBEN + '|' + HSTBM;
-    var pr = DB.doc("config/homeStats").set({items:JSON.parse(js), people:PEOPLE || null, tot:HSTTOT, progs:HPROGS, ben:HSTBEN, bm:HSTBM}); pr.catch(function(){}); return pr;
+    var pr = DB.doc("config/homeStats").set({items:JSON.parse(js), people:PEOPLE || null, tot:HSTTOT, progs:HPROGS, ben:HSTBEN, bm:HSTBM, ov:HSTOV}); pr.catch(function(){}); return pr;
   }
   function evCatSelect(cur, attrs){
     return '<select '+attrs+'><option value="">بدون تصنيف</option>'+evCats().map(function(c){ return '<option'+(c === cur ? ' selected' : '')+'>'+esc(c)+'</option>'; }).join("")+'</select>';
@@ -3119,7 +3119,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
   $("#hsForm").addEventListener("submit", function(e){
     e.preventDefault();
     HST = HST.filter(function(x){ return x.l.trim(); }); hstCalc(); hstDraw();
-    HSTBM = Math.max(0, +$("#hsBm").value || 0); hstCalc(); reachDraw();
+    HSTBM = Math.max(0, +$("#hsBm").value || 0); HSTOV = Math.max(0, +$("#hsOv").value || 0); hstCalc(); hstDraw(); reachDraw();
     var pr = hstSave(true);
     if(pr) pr.then(function(){ saveStf(); toast("تم حفظ الإحصائيات"); }, function(){ toast("تعذّر الحفظ"); }); else toast("تم التطبيق (بدون حفظ)");
   });
