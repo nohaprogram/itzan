@@ -107,6 +107,12 @@ td select{width:auto;padding:3px 8px;font-size:14px}
 .pill{display:inline-block;font-size:13px;padding:1px 10px;border-radius:999px}
 .pill.good{background:var(--good-soft);color:var(--good)}
 .pill.warn{background:var(--warn-soft);color:var(--warn)}
+.thxg{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-bottom:24px}
+.thxc{background:#E6DCF4;border-radius:14px;padding:14px 16px;position:relative;line-height:1.8}
+.thxc b{display:block;font-size:14px;margin-bottom:4px}
+.thxc .x{position:absolute;top:6px;left:8px}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .thxc{background:#3a2f4d}}
+:root[data-theme="dark"] .thxc{background:#3a2f4d}
 .pill.bad{background:var(--bad-soft);color:var(--bad)}
 .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
 .toolbar input{max-width:280px}
@@ -356,6 +362,10 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
   <div class="sec-h"><div><div class="eyebrow">منجزات هذا العام ١٤٤٨ هـ</div><h2>مؤشرات الأداء</h2></div></div>
   <div class="hstats" id="hStats"></div>
   <div class="hstats reach" id="hReach" hidden></div>
+  <div id="thxWrap" hidden>
+    <div class="sec-h"><div><div class="eyebrow">من القلب</div><h2>جدار الشكر والتقدير</h2></div></div>
+    <div class="thxg" id="thxList"></div>
+  </div>
   <div id="hPeopleWrap" hidden>
     <div class="sec-h"><div><div class="eyebrow">مجتمع المدرسة</div><h2>المدرسة بالأرقام</h2></div></div>
     <div class="hstats" id="hPeople"></div>
@@ -1226,7 +1236,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     $("#inboxTable").innerHTML = '<thead><tr><th>النوع</th><th>المرسِل</th><th>التفاصيل</th><th>الحالة</th></tr></thead><tbody>'+
       inbox.map(function(r){
         return '<tr><td>'+esc(r.k)+(r.k==="استشارة"?(r.ct?' · '+esc(r.ct):'')+' <span class="pill warn">خاصة</span>':'')+(r.k==="شكر وتقدير"?' <span class="pill good">'+esc("إلى: "+(r.to||"")+(r.tn?" — "+r.tn:""))+'</span>':'')+(r.u?' <span class="pill bad">عاجلة</span>':'')+'</td><td>'+esc(r.f)+(r.nm?'<div>'+esc(r.nm)+matchTag(r.nm)+'</div>':'')+'</td><td>'+esc(r.t)+(r.c?'<div style="font-size:13px;color:var(--muted)">التواصل المفضل: '+esc(r.c)+(r.m?' · الموعد: '+esc(r.m):'')+'</div>':'')+'</td><td><select data-ist="'+r.id+'" aria-label="حالة الرسالة">'+
-          INST.map(function(s){ return '<option'+(s===r.st?' selected':'')+'>'+s+'</option>'; }).join("")+'</select><div style="margin-top:6px"><button class="x" type="button" data-idel="'+r.id+'" data-io="'+esc(r._o||"")+'">حذف</button></div></td></tr>';
+          INST.map(function(s){ return '<option'+(s===r.st?' selected':'')+'>'+s+'</option>'; }).join("")+'</select><div style="margin-top:6px">'+(r.k==="شكر وتقدير"&&isCounselor?'<button class="x" type="button" data-ithx="'+r.id+'">نشر في جدار الشكر</button> ':'')+'<button class="x" type="button" data-idel="'+r.id+'" data-io="'+esc(r._o||"")+'">حذف</button></div></td></tr>';
       }).join("")+'</tbody>';
     var done = inbox.filter(function(r){ return r.st === INST[2]; }).length;
     var bd = $("#inboxDelDone"); if(bd){ bd.hidden = !done || !isCounselor; bd.textContent = "حذف الرسائل المعالَجة ("+arNum(done)+")"; bd.classList.remove("armed"); }
@@ -2865,7 +2875,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     });
     onDoc("config/homeStats", function(sn){
       if(sn.exists && !isStaff && sn.data().tot !== undefined){ HSTTOT = sn.data().tot; HPROGS = sn.data().progs || []; }
-      if(sn.exists){ var hd = sn.data(); HSTBM = +hd.bm || 0; HSTOV = (hd.ov === undefined ? 16 : (+hd.ov || 0)); if(!isStaff && HSTOV > 0) HSTTOT = HSTOV; if($("#hsOv")) $("#hsOv").value = HSTOV || ""; if(!isStaff) HSTBEN = +hd.ben || 0; if($("#hsBm")) $("#hsBm").value = HSTBM; reachDraw(); }
+      if(sn.exists){ var hd = sn.data(); THX = hd.thx || []; thxDraw(); HSTBM = +hd.bm || 0; HSTOV = (hd.ov === undefined ? 16 : (+hd.ov || 0)); if(!isStaff && HSTOV > 0) HSTTOT = HSTOV; if($("#hsOv")) $("#hsOv").value = HSTOV || ""; if(!isStaff) HSTBEN = +hd.ben || 0; if($("#hsBm")) $("#hsBm").value = HSTBM; reachDraw(); }
       if(sn.exists && sn.data().people && !isStaff){ PEOPLE = sn.data().people; peopleDraw(); }
       if(sn.exists && sn.data().items && sn.data().items.length){ HST = sn.data().items.map(function(x){ return {l:x.l, s:x.s || "", m:x.m || 0, n:x.n || 0, auto:x.a || [], ic:x.ic || "star"}; }); if(isStaff){ hstCalc(); } hstDraw(); }
     });
@@ -3083,12 +3093,20 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     if ($("#hProgs")) $("#hProgs").innerHTML = HPROGS.map(function(x,i){ return '<div class="hst"'+pst(i+2)+'><b>'+arNum(x.n)+'</b><strong>'+esc(x.p)+'</strong></div>'; }).join("");
     if(isStaff) $("#hsRows").innerHTML = HST.map(function(x,i){ return '<div class="hsrow"><input type="number" min="0" data-hn="'+i+'" value="'+(+x.m||0)+'" aria-label="عدد يدوي إضافي" title="عدد يدوي يُضاف إلى المحسوب من الشواهد"><input type="text" data-hl="'+i+'" value="'+esc(x.l)+'" aria-label="العنوان" placeholder="العنوان"><input type="text" data-hs="'+i+'" value="'+esc(x.s||"")+'" aria-label="التفاصيل" placeholder="التفاصيل (إن تُرك فارغًا تُكتب أسماء الشواهد تلقائيًا)"><select data-hi="'+i+'" aria-label="الأيقونة">'+Object.keys(ICONS).map(function(k){ return '<option value="'+k+'"'+(x.ic===k?' selected':'')+'>'+ICONS[k][0]+'</option>'; }).join("")+'</select><button class="x" type="button" data-hd="'+i+'">حذف</button></div>'; }).join("");
   }
+  var THX = [];
+  function thxDraw(){
+    var w = $("#thxWrap"); if(!w) return;
+    w.hidden = !THX.length;
+    $("#thxList").innerHTML = THX.map(function(x,i){
+      return '<div class="thxc"><b>شكر إلى '+esc(x.to||"")+(x.tn?' — '+esc(x.tn):'')+'</b>'+esc(x.t)+(isStaff&&isCounselor?'<button class="x" type="button" data-thxdel="'+i+'">إزالة</button>':'')+'</div>';
+    }).join("");
+  }
   function hstSave(force){
     if(!DB || !isStaff) return;
     hstCalc();
     var js = JSON.stringify(HST.map(function(x){ return {l:x.l, s:x.s||"", m:+x.m||0, n:x.n, a:x.auto||[], ic:x.ic||"star"}; }));
     if(!force && (HSTTOT + js + JSON.stringify(HPROGS) + HSTBEN + '|' + HSTBM) === hstLast) return; hstLast = HSTTOT + js + JSON.stringify(HPROGS) + HSTBEN + '|' + HSTBM;
-    var pr = DB.doc("config/homeStats").set({items:JSON.parse(js), people:PEOPLE || null, tot:HSTTOT, progs:HPROGS, ben:HSTBEN, bm:HSTBM, ov:HSTOV}); pr.catch(function(){}); return pr;
+    var pr = DB.doc("config/homeStats").set({items:JSON.parse(js), people:PEOPLE || null, tot:HSTTOT, progs:HPROGS, ben:HSTBEN, bm:HSTBM, ov:HSTOV, thx:THX}); pr.catch(function(){}); return pr;
   }
   function evCatSelect(cur, attrs){
     return '<select '+attrs+'><option value="">بدون تصنيف</option>'+evCats().map(function(c){ return '<option'+(c === cur ? ' selected' : '')+'>'+esc(c)+'</option>'; }).join("")+'</select>';
@@ -3156,6 +3174,17 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     inbox = inbox.filter(function(r){ return !pairs.some(function(p){ return p.id === r.id && p.o === r._o; }); });
     inboxDraw(); refreshDash();
   }
+  $("#inboxTable").addEventListener("click", function(e){
+    var b = e.target.closest("[data-ithx]"); if(!b || !isStaff || !isCounselor) return;
+    var r = inbox.filter(function(x){ return x.id === +b.dataset.ithx; })[0]; if(!r) return;
+    if(THX.some(function(x){ return x.id === r.id; })){ toast("منشورة مسبقًا"); return; }
+    THX.unshift({id:r.id, to:r.to||"", tn:r.tn||"", t:r.t}); thxDraw();
+    var p = hstSave(true); toast("نُشرت في جدار الشكر دون اسم المرسِلة");
+  });
+  $("#thxList").addEventListener("click", function(e){
+    var b = e.target.closest("[data-thxdel]"); if(!b) return;
+    THX.splice(+b.dataset.thxdel, 1); thxDraw(); hstSave(true);
+  });
   $("#inboxTable").addEventListener("click", async function(e){
     var b = e.target.closest("[data-idel]"); if(!b || !DB || !isStaff || !isCounselor) return;
     if(!b.classList.contains("armed")){ b.classList.add("armed"); b.textContent = "تأكيد الحذف؟"; setTimeout(function(){ if(b.isConnected){ b.classList.remove("armed"); b.textContent = "حذف"; } }, 4000); return; }
