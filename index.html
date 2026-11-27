@@ -414,6 +414,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     <a class="card hub" href="#lists"><span class="tag">قوائم</span><h3>الطالبات والمعلمات والموظفات</h3><p>القوائم والمتعثرات واستيراد الأسماء.</p></a>
     <a class="card hub" href="#programs"><span class="tag">برامج</span><h3>الشواهد والمبادرات</h3><p>افتحي أي برنامج لإضافة شواهده ومبادراته وصوره وفيديوهاته.</p></a>
   </div>
+  <div class="actions" style="margin-bottom:8px"><button type="button" class="btn ghost" id="nfOn" hidden>تفعيل إشعارات المتصفح</button></div>
   <div class="tabs" id="dashTabs" role="group" aria-label="أقسام اللوحة">
     <button class="tab" type="button" data-d="inbox" aria-pressed="true">الوارد</button>
     <button class="tab" type="button" data-d="book" aria-pressed="false">الحجوزات</button>
@@ -2866,6 +2867,40 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
   function flatOwn(snap){ var o = []; snap.docs.forEach(function(d){ var x = d.data(); if(x && x.items) x.items.forEach(function(i){ var c = Object.assign({}, i); c._o = d.id; o.push(c); }); }); return o; }
   function flat(snap){ var o = []; snap.docs.forEach(function(d){ var x = d.data(); if(x && x.items) o = o.concat(x.items); }); return o; }
   function onColl(path, fn){ try{ DB.collection(path).onSnapshot(fn, function(){}); }catch(e){} }
+  /* إشعارات الموجهة: ما يرد جديدًا أثناء فتح الموقع، وما ورد منذ آخر زيارة */
+  var NLV = 0; try{ NLV = +localStorage.getItem("itzan.nlv") || 0; }catch(e){}
+  var nfSeen = {}, nfQ = [], nfT = null, nfCount = 0, baseTitle = document.title;
+  function nfStamp(){ try{ localStorage.setItem("itzan.nlv", String(Date.now())); }catch(e){} }
+  setInterval(nfStamp, 20000); addEventListener("pagehide", nfStamp);
+  document.addEventListener("visibilitychange", function(){ if(!document.hidden){ nfCount = 0; document.title = baseTitle; } else nfStamp(); });
+  function nfTs(x){ var v = x._ts || x.id || 0; return v > 1e14 ? v / 1000 : v; }
+  function nfFlush(){
+    nfT = null; if(!nfQ.length) return;
+    var msgs = nfQ.slice(); nfQ = [];
+    var txt = msgs.length === 1 ? msgs[0] : "لديكِ "+arNum(msgs.length)+" إشعارات جديدة: "+msgs.slice(0,3).join("، ")+(msgs.length > 3 ? "…" : "");
+    toast(txt);
+    if(document.hidden){ nfCount += msgs.length; document.title = "("+arNum(nfCount)+") "+baseTitle; }
+    try{ if("Notification" in window && Notification.permission === "granted" && document.hidden) new Notification("اتزان", {body:txt, icon:"/icon-192.png"}); }catch(e){}
+  }
+  function nfCheck(key, list, label, idf){
+    if(!isStaff || !isCounselor) return;
+    var first = !nfSeen[key]; if(first) nfSeen[key] = {};
+    var fresh = [];
+    list.forEach(function(x){
+      var id = idf ? idf(x) : String(x.id); if(nfSeen[key][id]) return; nfSeen[key][id] = 1;
+      if(!first || (NLV && nfTs(x) > NLV)) fresh.push(x);
+    });
+    fresh.forEach(function(x){ nfQ.push(label(x)); });
+    if(fresh.length){ if(nfT) clearTimeout(nfT); nfT = setTimeout(nfFlush, first ? 1200 : 400); }
+  }
+  function nfBtn(){
+    var b = $("#nfOn"); if(!b) return;
+    b.hidden = !isStaff || !isCounselor || !("Notification" in window) || Notification.permission !== "default";
+  }
+  document.addEventListener("click", function(e){
+    if(!e.target.closest("#nfOn")) return;
+    try{ Notification.requestPermission().then(nfBtn); }catch(x){}
+  });
   function onDoc(path, fn){ try{ DB.doc(path).onSnapshot(fn, function(){}); }catch(e){} }
   function applyStatus(){ inbox.forEach(function(r){ if(statusMap[r.id]) r.st = statusMap[r.id]; }); }
   function saveLists(){
@@ -2915,7 +2950,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
         try{ ASSETS = await claude.use("assets"); }catch(e){ ASSETS = null; }
       }
     }catch(e){ DB = null; }
-    applyRole();
+    applyRole(); nfBtn();
     function prefillMe(){
       var em = ""; try{ em = (JSON.parse(localStorage.getItem("itzan.session.v1")||"{}").email || ""); }catch(e){}
       var m = em.match(/^t(\d+)@teachers\.example\.com$/i); if(!m) return false;
@@ -2975,13 +3010,13 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     onDoc("progStaff/main", function(sn){
       if(sn.exists){ var d = sn.data(); PROG.evidence = d.evidence || {}; PROG.initiatives = d.initiatives || {}; PROG.media = d.media || {}; PROG.plan = d.plan || []; PROG.partners = d.partners || []; if(typeof partDraw === "function") partDraw(); calcApps(); if(typeof planDraw === "function") planDraw(); if(isStaff){ autoCatOnce(); hstCalc(); hstDraw(); hstSave(); } if(curPid) progDetail(); }
     });
-    onColl("parts", function(sn){ PARTS = flat(sn).sort(function(a,b){ return b.id - a.id; }); refreshDash(); if(curPid) progDetail(); });
+    onColl("parts", function(sn){ PARTS = flat(sn).sort(function(a,b){ return b.id - a.id; }); nfCheck("parts", PARTS, function(){ return "طلب مشاركة جديد"; }); refreshDash(); if(curPid) progDetail(); });
     inbox = []; bookings = []; scResults = []; PL = []; students = []; teachers = [];
     inboxDraw(); bookDraw(); scTableDraw(); renderList();
-    onColl("inbox", function(sn){ inbox = flatOwn(sn).sort(function(a,b){ return b.id - a.id; }); applyStatus(); inboxDraw(); refreshDash(); });
-    onColl("lagRows", function(sn){ LAGS = sn.docs.map(function(d){ return d.data(); }); lagDraw(); wkDraw(); });
+    onColl("inbox", function(sn){ inbox = flatOwn(sn).sort(function(a,b){ return b.id - a.id; }); applyStatus(); inboxDraw(); nfCheck("inbox", inbox, function(r){ return r.k === "شكر وتقدير" ? "رسالة شكر وتقدير جديدة" : r.u ? "استشارة عاجلة" : "رسالة جديدة ("+r.k+")"; }); refreshDash(); });
+    onColl("lagRows", function(sn){ LAGS = sn.docs.map(function(d){ return d.data(); }); lagDraw(); wkDraw(); nfCheck("lag", LAGS.map(function(d){ return Object.assign({}, d, {_ts:d.at}); }), function(d){ return "أرسلت "+(d.n || "معلمة")+" بيانات جديدة"; }, function(d){ return (d.n || "") + "|" + d.at; }); });
     onDoc("inboxStatus/main", function(sn){ statusMap = (sn.exists && sn.data().map) || {}; applyStatus(); inboxDraw(); refreshDash(); });
-    onColl("bookings", function(sn){ bookings = flat(sn); bookDraw(); refreshDash(); });
+    onColl("bookings", function(sn){ bookings = flat(sn); bookDraw(); nfCheck("book", bookings, function(){ return "حجز جديد"; }); refreshDash(); });
     onColl("scaleResults", function(sn){ var all = flat(sn).sort(function(a,b){ return b.id - a.id; }); scResults = all.filter(function(r){ return r.k !== "pl"; }); PL = all.filter(function(r){ return r.k === "pl"; }); scTableDraw(); refreshDash(); plStats(); });
     onDoc("lists/main", function(sn){
       if(!sn.exists) return;
