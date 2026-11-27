@@ -830,6 +830,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
       <label for="tfSubject">المادة<input type="text" id="tfSubject" data-bind="T.subject" list="tfSubjects" autocomplete="off" placeholder="مثال: الرياضيات"></label>
     </div>
     <div id="tfCls"></div>
+    <div class="hint" id="tfDraft" style="margin-top:10px">تُحفظ مسودتك تلقائيًا في هذا الجهاز فقط. <button type="button" class="x" id="tfDraftClr">مسح المسودة</button></div>
     <datalist id="tfTeachers"></datalist>
     <datalist id="tfSubjects">
       <option value="القرآن الكريم"><option value="التفسير"><option value="الحديث"><option value="الفقه"><option value="التوحيد">
@@ -1770,6 +1771,17 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     var sv = JSON.parse(localStorage.getItem("itizan-teacher") || "{}");
     if(sv.teacher) S.T.teacher = sv.teacher; if(sv.subject) S.T.subject = sv.subject; if(sv.classes && sv.classes.length) S.T.classes = sv.classes.map(ncls); S.T.all = !!sv.all;
   }catch(e){}
+  var DRK = "itzan-draft-v1", draftLast = "";
+  try{
+    var dr = JSON.parse(localStorage.getItem(DRK) || "null");
+    if(dr && dr.w && dr.p && dr.h){ S.w = dr.w; S.p = dr.p; S.h = dr.h; draftLast = localStorage.getItem(DRK); }
+  }catch(e){}
+  setInterval(function(){
+    try{
+      var j = JSON.stringify({w:S.w, p:S.p, h:S.h});
+      if(j !== draftLast){ localStorage.setItem(DRK, j); draftLast = j; }
+    }catch(e){}
+  }, 2000);
   function saveTeacher(){ try{ localStorage.setItem("itizan-teacher", JSON.stringify(S.T)); }catch(e){} }
   function stu(id){ return students.filter(function(x){ return String(x.id) === String(id); })[0]; }
   function getp(path){ return path.split(".").reduce(function(o,k){ return o == null ? o : o[k]; }, S); }
@@ -1817,7 +1829,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     });
     h += '<div class="actions"><button type="button" class="btn ghost" data-act="add"'+(w.rows.length>=10?' disabled':'')+'>+ إضافة طالبة</button>'+
       '<button type="button" class="btn" data-act="dl-weekly">تنزيل البيان بصيغة Word</button></div>'+
-      '<p class="hint" style="margin-top:8px">الصفحة لا تحفظ ما تكتبينه بعد إغلاقها، فنزّلي الملف عند الانتهاء.</p>';
+      '<p class="hint" style="margin-top:8px">تُحفظ مسودتك تلقائيًا في هذا الجهاز، ومع ذلك نزّلي الملف عند الانتهاء.</p>';
     $("#tfWeekly").innerHTML = h;
   }
 
@@ -1919,7 +1931,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     o += '<div class="actions"><button type="button" class="btn ghost" data-act="hadd" data-k="imp">+ إضافة متحسنة</button></div>';
     o += '<div class="actions">'+
       '<button type="button" class="btn" data-act="dl-honor">تنزيل البيان بصيغة Word</button></div>'+
-      '<p class="hint" style="margin-top:8px">الصفحة لا تحفظ ما تكتبينه بعد إغلاقها، فنزّلي الملف عند الانتهاء.</p>';
+      '<p class="hint" style="margin-top:8px">تُحفظ مسودتك تلقائيًا في هذا الجهاز، ومع ذلك نزّلي الملف عند الانتهاء.</p>';
     $("#tfHonor").innerHTML = o;
   }
   function renderLag(){
@@ -1938,7 +1950,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     });
     o += '<div class="actions">'+(h.lag.length < 14 ? '<button type="button" class="btn ghost" data-act="hadd" data-k="lag">+ إضافة طالبة</button>' : '')+
       '<button type="button" class="btn" data-act="dl-lag">تنزيل البيان بصيغة Word</button></div>'+
-      '<p class="hint" style="margin-top:8px">الصفحة لا تحفظ ما تكتبينه بعد إغلاقها، فنزّلي الملف عند الانتهاء.</p>';
+      '<p class="hint" style="margin-top:8px">تُحفظ مسودتك تلقائيًا في هذا الجهاز، ومع ذلك نزّلي الملف عند الانتهاء.</p>';
     $("#tfLag").innerHTML = o;
   }
   async function doLag(){
@@ -2121,6 +2133,12 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
   var tfRoot = $("#v-tforms");
   function panelOf(el){ return el.closest("#tfHonor") ? "honor" : el.closest("#tfLag") ? "lag" : el.closest("#tfPlan") ? "plan" : el.closest("#tfWeekly") ? "weekly" : ""; }
   function redraw(el){ var k = panelOf(el); if(k === "plan") renderPlan(); else if(k === "weekly") renderWeekly(); else if(k === "honor") renderHonor(); else if(k === "lag") renderLag(); }
+  $("#tfDraftClr").addEventListener("click", function(){
+    var b = this;
+    if(!b.classList.contains("armed")){ b.classList.add("armed"); b.textContent = "تأكيد المسح؟"; setTimeout(function(){ b.classList.remove("armed"); b.textContent = "مسح المسودة"; }, 4000); return; }
+    S.w = {term:"الأول", week:"", date:hdate(), rows:[newRow()]}; S.p = freshPlan(); S.h = {term:"الأول", date:hdate(), top:[], imp:[], lag:[]};
+    try{ localStorage.removeItem(DRK); }catch(e){} draftLast = ""; tfRedrawAll(); toast("تم مسح المسودة");
+  });
   tfRoot.addEventListener("input", function(e){
     var el = e.target.closest("[data-bind]"); if(!el) return;
     setp(el.dataset.bind, el.value);
