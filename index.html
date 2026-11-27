@@ -3321,7 +3321,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
 <script>
 /* منتقي التاريخ: هجري وميلادي، يظهر عند الضغط على خانة التاريخ */
 (function(){
-  var SEL = '#wDate,#pD,[id^="fd"],#evDt,#ptD,[data-fd]';
+  var SEL = '#wDate,#pD,#hDate,#lDate,[id^="fd"],#evDt,#ptD,[data-fd]';
   var HN = ["محرم","صفر","ربيع الأول","ربيع الآخر","جمادى الأولى","جمادى الآخرة","رجب","شعبان","رمضان","شوال","ذو القعدة","ذو الحجة"];
   var GN = ["يناير","فبراير","مارس","أبريل","مايو","يونيو","يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"];
   var WD = ["أحد","اثنين","ثلاثاء","أربعاء","خميس","جمعة","سبت"];
@@ -3401,7 +3401,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     var base = p ? p.date : now; st.first = st.mode === "h" ? hFirst(base) : gFirst(base);
     draw(); box.hidden = false;
   }
-  document.addEventListener("focusin", function(e){ var el = e.target.closest && e.target.closest(SEL); if(el && el.tagName === "INPUT") el.setAttribute("inputmode", "none"); });
+  document.addEventListener("focusin", function(e){ var el = e.target.closest && e.target.closest(SEL); if(el && el.tagName === "INPUT") el.setAttribute("inputmode", "none"); el.setAttribute("readonly", ""); });
   document.addEventListener("click", function(e){ var el = e.target.closest && e.target.closest(SEL); if(el && el.tagName === "INPUT") open(el); });
 })();
 </script>
