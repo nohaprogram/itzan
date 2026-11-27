@@ -530,6 +530,10 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
       <h3 class="section-title" style="margin-top:26px">الطالبات المتأخرات دراسيًا (من بيانات المعلمات)</h3>
       <p class="hint" id="lagInfo"></p>
       <div class="scroll"><table id="lagTable"></table></div>
+      <h3 class="section-title" style="margin-top:26px">ما أرسلته المعلمات</h3>
+      <div class="card form"><label for="wkType">النوع<select id="wkType"><option value="wk">البيان الأسبوعي للمقصرات</option><option value="top">المتفوقات</option><option value="imp">المتحسنات</option><option value="pl">الخطط العلاجية</option></select></label></div>
+      <p class="hint" id="wkInfo"></p>
+      <div class="scroll"><table id="wkTable"></table></div>
       <h3 class="section-title" style="margin-top:26px">نسخة احتياطية للبيانات</h3>
       <div class="card form">
         <p style="margin:0 0 8px">تنزيل كل بيانات المنصة (الرسائل والحجوزات والقوائم والبرامج والشواهد…) في ملف واحد تحتفظين به. لا يشمل رموز دخول المعلمات.</p>
@@ -1828,7 +1832,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
         '<div><button type="button" class="tg sm add" data-act="toplan" data-i="'+i+'">فتح سجل الخطة العلاجية لهذه الطالبة</button></div></div>';
     });
     h += '<div class="actions"><button type="button" class="btn ghost" data-act="add"'+(w.rows.length>=10?' disabled':'')+'>+ إضافة طالبة</button>'+
-      '<button type="button" class="btn" data-act="dl-weekly">تنزيل البيان بصيغة Word</button></div>'+
+      '<button type="button" class="btn ghost" data-act="send-weekly">إرسال إلى موجهة الطالبات</button> <button type="button" class="btn" data-act="dl-weekly">تنزيل البيان بصيغة Word</button></div>'+
       '<p class="hint" style="margin-top:8px">تُحفظ مسودتك تلقائيًا في هذا الجهاز، ومع ذلك نزّلي الملف عند الانتهاء.</p>';
     $("#tfWeekly").innerHTML = h;
   }
@@ -1878,7 +1882,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
       [["auto","تلقائيًا حسب آخر متابعة"],["1","التحسن ظهر جيدًا"],["2","التحسن كان بطيئًا"],["3","الطالبة لم تتحسن"]].map(function(o){ return '<option value="'+o[0]+'"'+(o[0]===p.imp?' selected':'')+'>'+o[1]+'</option>'; }).join("")+
       '</select></label></div>';
 
-    h += '<div class="actions"><button type="button" class="btn" data-act="dl-plan">تنزيل سجل الخطة العلاجية بصيغة Word</button></div>'+
+    h += '<div class="actions"><button type="button" class="btn ghost" data-act="send-plan">إرسال إلى موجهة الطالبات</button> <button type="button" class="btn" data-act="dl-plan">تنزيل سجل الخطة العلاجية بصيغة Word</button></div>'+
       '<p class="hint" style="margin-top:8px">يُنقل إلى خطاب ولي الأمر تلقائيًا: المادة، ونواحي القصور، والإجراءات وأزمنتها. التواقيع والتواريخ تبقى فارغة لتوقيعها بعد الطباعة.</p>';
     $("#tfPlan").innerHTML = h;
   }
@@ -1930,7 +1934,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     });
     o += '<div class="actions"><button type="button" class="btn ghost" data-act="hadd" data-k="imp">+ إضافة متحسنة</button></div>';
     o += '<div class="actions">'+
-      '<button type="button" class="btn" data-act="dl-honor">تنزيل البيان بصيغة Word</button></div>'+
+      '<button type="button" class="btn ghost" data-act="send-honor">إرسال إلى موجهة الطالبات</button> <button type="button" class="btn" data-act="dl-honor">تنزيل البيان بصيغة Word</button></div>'+
       '<p class="hint" style="margin-top:8px">تُحفظ مسودتك تلقائيًا في هذا الجهاز، ومع ذلك نزّلي الملف عند الانتهاء.</p>';
     $("#tfHonor").innerHTML = o;
   }
@@ -1949,7 +1953,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
         inp("hLA"+i, p+".act", "ملاحظات", r.act, "اختياري")+'</div>';
     });
     o += '<div class="actions">'+(h.lag.length < 14 ? '<button type="button" class="btn ghost" data-act="hadd" data-k="lag">+ إضافة طالبة</button>' : '')+
-      '<button type="button" class="btn" data-act="dl-lag">تنزيل البيان بصيغة Word</button></div>'+
+      '<button type="button" class="btn ghost" data-act="send-lag">إرسال إلى موجهة الطالبات</button> <button type="button" class="btn" data-act="dl-lag">تنزيل البيان بصيغة Word</button></div>'+
       '<p class="hint" style="margin-top:8px">تُحفظ مسودتك تلقائيًا في هذا الجهاز، ومع ذلك نزّلي الملف عند الانتهاء.</p>';
     $("#tfLag").innerHTML = o;
   }
@@ -1966,13 +1970,45 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
       lagShare(rows);
     }catch(e){ if(e && e.code === "declined") return; toast("تعذر تجهيز الملف، حاولي مرة أخرى"); }
   }
+  function myTid(){
+    var em = ""; try{ em = (JSON.parse(localStorage.getItem("itzan.session.v1")||"{}").email || ""); }catch(e){}
+    var m = em.match(/^t(\d+)@teachers\.example\.com$/i); return m ? m[1] : "";
+  }
+  async function shareMerge(patch){
+    var id = myTid(); if(!id || !DB) return false;
+    var ref = DB.doc("lagRows/"+id), cur = {};
+    try{ var sn = await ref.get(); if(sn.exists) cur = sn.data() || {}; }catch(e){}
+    var o = Object.assign({}, cur, patch, {n:S.T.teacher || cur.n || "", subject:S.T.subject || cur.subject || "", at:Date.now()});
+    await ref.set(o); return true;
+  }
   async function lagShare(rows){
     try{
-      var em = ""; try{ em = (JSON.parse(localStorage.getItem("itzan.session.v1")||"{}").email || ""); }catch(e){}
-      var m = em.match(/^t(\d+)@teachers\.example\.com$/i); if(!m || !DB) return;
-      await DB.doc("lagRows/"+m[1]).set({n:S.T.teacher || "", subject:S.T.subject || "", term:S.h.term, date:S.h.date || "", at:Date.now(),
-        rows:rows.map(function(r){ var st = stu(r.sid) || {}; return {sid:r.sid, n:st.n || "", cls:st.cls || "", grade:r.grade || "", rs:r.rs || "", act:r.act || ""}; })});
+      await shareMerge({term:S.h.term, date:S.h.date || "", rows:rows.map(function(r){ var st = stu(r.sid) || {}; return {sid:r.sid, n:st.n || "", cls:st.cls || "", grade:r.grade || "", rs:r.rs || "", act:r.act || ""}; })});
     }catch(e){}
+  }
+  function wst(r){ var st = stu(r.sid) || {}; return Object.assign({}, r, {n:st.n || "", cls:st.cls || ""}); }
+  async function doSend(kind){
+    if(!myTid()){ toast("الإرسال متاح للمعلمة بعد دخولها بكودها"); return; }
+    var patch, cnt;
+    if(kind === "lag"){
+      var lr = S.h.lag.filter(function(r){ return r.sid; });
+      if(!lr.length){ toast("اختاري طالبة واحدة على الأقل"); return; }
+      try{ await lagShare(lr); toast("تم الإرسال إلى موجهة الطالبات"); }catch(e){ toast("تعذّر الإرسال"); } return;
+    }
+    if(kind === "weekly"){
+      var wr = S.w.rows.filter(function(r){ return r.sid; });
+      if(!wr.length){ toast("اختاري طالبة واحدة على الأقل"); return; }
+      patch = {wk:{term:S.w.term, week:S.w.week || "", date:S.w.date || "", rows:wr.map(wst)}};
+    } else if(kind === "honor"){
+      var tp = S.h.top.filter(function(r){ return r.sid; }).map(wst), ip = S.h.imp.filter(function(r){ return r.sid; }).map(wst);
+      if(!tp.length && !ip.length){ toast("اختاري طالبة واحدة على الأقل"); return; }
+      patch = {hn:{term:S.h.term, date:S.h.date || "", top:tp, imp:ip}};
+    } else {
+      if(!S.p.sid){ toast("اختاري الطالبة أولًا"); return; }
+      var st = stu(S.p.sid) || {};
+      patch = {pl:{sid:S.p.sid, n:st.n || "", cls:st.cls || "", term:S.p.term, date:S.p.date || "", causes:S.p.causes || "", procs:(S.p.procs || []).filter(function(x){ return x.on; }).length}};
+    }
+    try{ await shareMerge(patch); toast("تم الإرسال إلى موجهة الطالبات"); }catch(e){ toast("تعذّر الإرسال، حاولي مرة أخرى"); }
   }
   function wx(t){ return String(t == null ? "" : t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
   function wp(t, o){ o = o || {};
@@ -2176,6 +2212,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
       var a = b.dataset.act, i = +b.dataset.i;
       if(a === "hadd"){ S.h[b.dataset.k].push(b.dataset.k === "top" ? {sid:"", subj:S.T.subject || "", full:""} : b.dataset.k === "lag" ? {sid:"", subj:S.T.subject || "", grade:"", rs:"", act:""} : {sid:"", subj:S.T.subject || "", prev:"", cur:"", rf:""}); renderHonor(); renderLag(); return; }
       if(a === "hdel"){ S.h[b.dataset.k].splice(i, 1); renderHonor(); renderLag(); return; }
+      if(a.indexOf("send-") === 0){ doSend(a.slice(5)); return; }
       if(a === "dl-lag"){ doLag(); return; }
       if(a === "dl-honor"){ doHonor(); return; }
       if(a === "add"){ if(S.w.rows.length < 10){ S.w.rows.push(newRow()); renderWeekly(); } }
@@ -2751,7 +2788,20 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     var d = Math.floor((Date.now() - t) / 86400000);
     el.textContent = "آخر نسخة: قبل "+arNum(d)+" يومًا"+(d > 30 ? " — يُفضّل تحديثها." : ".");
   }
-  function repDraw2(){ repDraw(); bkInfo(); lagDraw(); }
+  function wkDraw(){
+    var el = $("#wkTable"); if(!el) return;
+    var ty = $("#wkType").value, rows = [], dn = {}; DOMS.forEach(function(x){ dn[x[0]] = x[1]; });
+    LAGS.forEach(function(d){
+      var who = esc(d.n || "") + (d.subject ? '<div style="font-size:13px;color:var(--muted)">'+esc(d.subject)+'</div>' : '');
+      if(ty === "wk" && d.wk) (d.wk.rows || []).forEach(function(r){ rows.push([r.n, r.cls, who, Object.keys(r.d || {}).filter(function(k){ return r.d[k]; }).map(function(k){ return dn[k] || k; }).join("، ") + (r.cnt ? " · "+esc(r.cnt)+" مرات" : "") + (r.why ? "<br>"+esc(r.why) : "")]); });
+      if((ty === "top" || ty === "imp") && d.hn) (d.hn[ty] || []).forEach(function(r){ rows.push([r.n, r.cls, who, ty === "top" ? esc(r.subj || "")+(r.full ? " — "+esc(r.full) : "") : esc(r.subj || "")+" ("+esc(r.prev || "")+" ← "+esc(r.cur || "")+")"+(r.rf ? "<br>"+esc(r.rf) : "")]); });
+      if(ty === "pl" && d.pl) rows.push([d.pl.n, d.pl.cls, who, (d.pl.date ? esc(d.pl.date)+" · " : "")+(d.pl.causes ? esc(d.pl.causes) : "إجراءات: "+arNum(d.pl.procs || 0))]);
+    });
+    $("#wkInfo").textContent = rows.length ? "عدد السجلات: "+arNum(rows.length) : "لم تُرسل المعلمات سجلات من هذا النوع بعد.";
+    el.innerHTML = rows.length ? '<thead><tr><th>الطالبة</th><th>الصف</th><th>المعلمة</th><th>التفاصيل</th></tr></thead><tbody>'+rows.map(function(r){ return '<tr><td>'+esc(r[0] || "")+'</td><td>'+esc(r[1] || "")+'</td><td>'+r[2]+'</td><td>'+r[3]+'</td></tr>'; }).join("")+'</tbody>' : "";
+  }
+  if($("#wkType")) $("#wkType").addEventListener("change", wkDraw);
+  function repDraw2(){ repDraw(); bkInfo(); lagDraw(); wkDraw(); }
   var bkDl = $("#bkDl");
   if(bkDl) bkDl.addEventListener("click", async function(){
     if(!window.itzanAuth || !itzanAuth.on){ toast("النسخة الاحتياطية تعمل على الموقع المباشر فقط"); return; }
@@ -2929,7 +2979,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     inbox = []; bookings = []; scResults = []; PL = []; students = []; teachers = [];
     inboxDraw(); bookDraw(); scTableDraw(); renderList();
     onColl("inbox", function(sn){ inbox = flatOwn(sn).sort(function(a,b){ return b.id - a.id; }); applyStatus(); inboxDraw(); refreshDash(); });
-    onColl("lagRows", function(sn){ LAGS = sn.docs.map(function(d){ return d.data(); }); lagDraw(); });
+    onColl("lagRows", function(sn){ LAGS = sn.docs.map(function(d){ return d.data(); }); lagDraw(); wkDraw(); });
     onDoc("inboxStatus/main", function(sn){ statusMap = (sn.exists && sn.data().map) || {}; applyStatus(); inboxDraw(); refreshDash(); });
     onColl("bookings", function(sn){ bookings = flat(sn); bookDraw(); refreshDash(); });
     onColl("scaleResults", function(sn){ var all = flat(sn).sort(function(a,b){ return b.id - a.id; }); scResults = all.filter(function(r){ return r.k !== "pl"; }); PL = all.filter(function(r){ return r.k === "pl"; }); scTableDraw(); refreshDash(); plStats(); });
