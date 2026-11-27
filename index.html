@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex">
-<title>اتزان — الإرشاد الطلابي</title>
+<title>اتزان — التوجيه الطلابي</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&family=Baloo+Bhaijaan+2:wght@600;700&display=swap">
@@ -2450,7 +2450,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     c.direction = "rtl"; c.textAlign = "center";
     c.fillStyle = pl[1]; c.font = "700 62px "+F; wrapText(c, title, W/2, 300, W-200, 84);
     c.fillStyle = "#2b2b3a"; c.font = "500 58px "+F; wrapText(c, text, W/2, 640, W-220, 92);
-    c.fillStyle = pl[1]; c.font = "600 40px "+F; c.fillText(foot || "اتزان · الإرشاد الطلابي", W/2, H-110);
+    c.fillStyle = pl[1]; c.font = "600 40px "+F; c.fillText(foot || "اتزان · التوجيه الطلابي", W/2, H-110);
   }
   function drawPoster(){
     var cv = $("#pstCv"); if(!cv || !curPid) return;
@@ -2468,7 +2468,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     if(!window.MediaRecorder){ st.textContent = "المتصفح لا يدعم تسجيل الفيديو"; return; }
     var cv = document.createElement("canvas"); cv.width = 720; cv.height = 900;
     var pal = $("#pstPal").value, p = PIDS[curPid], texts = [$("#pstText").value].concat(phrasesFor(curPid).filter(function(x){ return x !== $("#pstText").value; })).slice(0,3);
-    var frames = [{t:p.t, x:"", ms:2500}].concat(texts.map(function(x){ return {t:p.t, x:x, ms:3500}; })).concat([{t:"اتزان", x:"الإرشاد الطلابي معك دائمًا", ms:2500}]);
+    var frames = [{t:p.t, x:"", ms:2500}].concat(texts.map(function(x){ return {t:p.t, x:x, ms:3500}; })).concat([{t:"اتزان", x:"التوجيه الطلابي معك دائمًا", ms:2500}]);
     var k = 1; var ctx = cv.getContext("2d");
     function show(f){
       var tmp = document.createElement("canvas"); tmp.width = 1080; tmp.height = 1350; paint(tmp, f.t, f.x, pal);
