@@ -1770,7 +1770,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
   function hdate(){ return H ? H.d + " / " + H.m + " / " + H.y : ""; }
   function newRow(){ return {sid:"", d:{beh:false,apps:false,part:false,hw:false,task:false}, cnt:"1", why:""}; }
   function freshPlan(){
-    return {sid:"", year:H ? H.y : "", guardian:"", enr:"school", soc:"", health:"n", healthNote:"", counselor:"", causes:"",
+    return {sid:"", year:H ? H.y : "", guardian:"", enr:"school", soc:"", health:"n", healthNote:"", counselor:"نهى محمد أحمد الأحمدي", causes:"",
       term:"1", date:hdate(), weak:WEAK.map(function(){return false;}), weakOther:"", caus:CAUS.map(function(){return false;}), causOther:"",
       procs:PROC.map(function(){ return {on:false, time:"", st:"", why:""}; }), procOther:"",
       fu:[1,2,3].map(function(){ return {date:"", lv:"", res:""}; }), imp:"auto"};
@@ -1783,7 +1783,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
   var DRK = "itzan-draft-v1", draftLast = "";
   try{
     var dr = JSON.parse(localStorage.getItem(DRK) || "null");
-    if(dr && dr.w && dr.p && dr.h){ S.w = dr.w; S.p = dr.p; S.h = dr.h; draftLast = localStorage.getItem(DRK); }
+    if(dr && dr.w && dr.p && dr.h){ S.w = dr.w; S.p = dr.p; S.h = dr.h; if(!S.p.counselor) S.p.counselor = "نهى محمد أحمد الأحمدي"; draftLast = localStorage.getItem(DRK); }
   }catch(e){}
   setInterval(function(){
     try{
