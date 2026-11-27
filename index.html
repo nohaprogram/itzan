@@ -535,6 +535,10 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
       <div class="card form"><label for="wkType">النوع<select id="wkType"><option value="wk">البيان الأسبوعي للمقصرات</option><option value="top">المتفوقات</option><option value="imp">المتحسنات</option><option value="pl">الخطط العلاجية</option></select></label></div>
       <p class="hint" id="wkInfo"></p>
       <div class="scroll"><table id="wkTable"></table></div>
+      <h3 class="section-title" style="margin-top:26px">سجل النشاط</h3>
+      <div class="card form"><label for="audWho">عرض<select id="audWho"><option value="">الجميع</option><option value="معلمة">المعلمات</option><option value="موجهة">الموجهة</option></select></label></div>
+      <p class="hint" id="audInfo"></p>
+      <div class="scroll"><table id="audTable"></table></div>
       <h3 class="section-title" style="margin-top:26px">نسخة احتياطية للبيانات</h3>
       <div class="card form">
         <p style="margin:0 0 8px">تنزيل كل بيانات المنصة (الرسائل والحجوزات والقوائم والبرامج والشواهد…) في ملف واحد تحتفظين به. لا يشمل رموز دخول المعلمات.</p>
@@ -1249,7 +1253,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
   }
   $("#inboxTable").addEventListener("change", function(e){
     var s = e.target.closest("[data-ist]"); if(!s) return;
-    inbox.forEach(function(r){ if(r.id === +s.dataset.ist) r.st = s.value; });
+    inbox.forEach(function(r){ if(r.id === +s.dataset.ist){ r.st = s.value; audit("تغيير حالة رسالة", r.k+" ← "+s.value); } });
   });
   var meetDay = 0, meetSlot = null;
   function meetDraw(){
@@ -1967,7 +1971,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
       var dl = (window.claude && window.claude.use) ? await window.claude.use("downloads") : null;
       if(!dl){ toast("تعذّر التنزيل في هذا المتصفح"); return; }
       await dl.save({filename:"بيان المتأخرات دراسيًا.docx", data:await fillDocx("form6", v)});
-      toast("تم تنزيل الملف");
+      toast("تم تنزيل الملف"); audit("تنزيل ملف", "المتأخرات دراسيًا");
       lagShare(rows);
     }catch(e){ if(e && e.code === "declined") return; toast("تعذر تجهيز الملف، حاولي مرة أخرى"); }
   }
@@ -1994,7 +1998,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     if(kind === "lag"){
       var lr = S.h.lag.filter(function(r){ return r.sid; });
       if(!lr.length){ toast("اختاري طالبة واحدة على الأقل"); return; }
-      try{ await lagShare(lr); toast("تم الإرسال إلى موجهة الطالبات"); }catch(e){ toast("تعذّر الإرسال"); } return;
+      try{ await lagShare(lr); audit("إرسال نموذج", "المتأخرات دراسيًا"); toast("تم الإرسال إلى موجهة الطالبات"); }catch(e){ toast("تعذّر الإرسال"); } return;
     }
     if(kind === "weekly"){
       var wr = S.w.rows.filter(function(r){ return r.sid; });
@@ -2009,7 +2013,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
       var st = stu(S.p.sid) || {};
       patch = {pl:{sid:S.p.sid, n:st.n || "", cls:st.cls || "", term:S.p.term, date:S.p.date || "", causes:S.p.causes || "", procs:(S.p.procs || []).filter(function(x){ return x.on; }).length}};
     }
-    try{ await shareMerge(patch); toast("تم الإرسال إلى موجهة الطالبات"); }catch(e){ toast("تعذّر الإرسال، حاولي مرة أخرى"); }
+    try{ await shareMerge(patch); audit("إرسال نموذج", {weekly:"البيان الأسبوعي", honor:"المتفوقات والمتحسنات", plan:"الخطة العلاجية"}[kind]); toast("تم الإرسال إلى موجهة الطالبات"); }catch(e){ toast("تعذّر الإرسال، حاولي مرة أخرى"); }
   }
   function wx(t){ return String(t == null ? "" : t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
   function wp(t, o){ o = o || {};
@@ -2050,7 +2054,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
       var dl = (window.claude && window.claude.use) ? await window.claude.use("downloads") : null;
       if(!dl){ toast("تعذّر التنزيل في هذا المتصفح"); return; }
       await dl.save({filename:"المتفوقات والمتحسنات.docx", data:await honorDocx()});
-      toast("تم تنزيل الملف");
+      toast("تم تنزيل الملف"); audit("تنزيل ملف", "المتفوقات والمتحسنات");
     }catch(e){ if(e && e.code === "declined") return; toast("تعذر تجهيز الملف، حاولي مرة أخرى"); }
   }
 
@@ -2160,7 +2164,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
       if(!dl){ toast("تعذّر التنزيل في هذا المتصفح"); return; }
       var data = await fillDocx(url, vals);
       await dl.save({filename:name, data:data});
-      toast("تم تنزيل الملف");
+      toast("تم تنزيل الملف"); audit("تنزيل ملف", name.replace(/\.docx$/, ""));
     }catch(e){
       if(e && e.code === "declined") return;
       toast("تعذر تجهيز الملف، حاولي مرة أخرى");
@@ -2819,7 +2823,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
       var d = new Date(), nm = "نسخة-اتزان-"+d.getFullYear()+"-"+p2(d.getMonth()+1)+"-"+p2(d.getDate())+".json";
       await repSave(nm, new TextEncoder().encode(json));
       try{ localStorage.setItem(BKK, String(Date.now())); }catch(e){}
-      bkInfo(); toast("تم تنزيل النسخة الاحتياطية ("+arNum(all.length)+" سجلًا)");
+      audit("نسخة احتياطية", "تنزيل"); bkInfo(); toast("تم تنزيل النسخة الاحتياطية ("+arNum(all.length)+" سجلًا)");
     }catch(e){ if(!(e && e.code === "declined")) toast("تعذر تجهيز النسخة الاحتياطية"); }
     bkDl.disabled = false; bkDl.textContent = old;
   });
@@ -2901,11 +2905,35 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     if(!e.target.closest("#nfOn")) return;
     try{ Notification.requestPermission().then(nfBtn); }catch(x){}
   });
+  /* سجل التدقيق: من فعل ماذا ومتى (يقرؤه حساب الموجهة فقط) */
+  function audit(act, det){
+    try{
+      if(!DB || !isStaff || !window.itzanAuth || !itzanAuth.on) return;
+      var em = ""; try{ em = (JSON.parse(localStorage.getItem("itzan.session.v1")||"{}").email || ""); }catch(e){}
+      var tm = em.match(/^t(\d+)@teachers\.example\.com$/i), who = em;
+      if(tm){ var t = teachers.filter(function(x){ return String(x.id) === tm[1]; })[0]; who = t ? t.n : "معلمة رقم "+tm[1]; }
+      var id = nid();
+      DB.doc("audit/"+id).set({t:Date.now(), who:who, role:isCounselor ? "موجهة" : "معلمة", a:act, d:det || ""}).catch(function(){});
+    }catch(e){}
+  }
+  var AUD = [];
+  function audDraw(){
+    var el = $("#audTable"); if(!el) return;
+    var fm = new Intl.DateTimeFormat("ar-SA-u-ca-gregory", {day:"numeric", month:"short", hour:"numeric", minute:"2-digit"});
+    var f = ($("#audWho") && $("#audWho").value) || "";
+    var rows = AUD.filter(function(x){ return !f || x.role === f; }).slice(0, 200);
+    $("#audInfo").textContent = AUD.length ? "آخر "+arNum(rows.length)+" إجراءً" : "لا توجد سجلات بعد. تظهر هنا الإجراءات بعد تشغيل ملف supabase-audit.sql.";
+    el.innerHTML = rows.length ? '<thead><tr><th>الوقت</th><th>من</th><th>الإجراء</th><th>التفاصيل</th></tr></thead><tbody>'+rows.map(function(x){
+      return '<tr><td>'+fm.format(new Date(x.t))+'</td><td>'+esc(x.who || "")+'<div style="font-size:13px;color:var(--muted)">'+esc(x.role || "")+'</div></td><td>'+esc(x.a || "")+'</td><td>'+esc(x.d || "")+'</td></tr>';
+    }).join("")+'</tbody>' : "";
+  }
+  document.addEventListener("change", function(e){ if(e.target && e.target.id === "audWho") audDraw(); });
   function onDoc(path, fn){ try{ DB.doc(path).onSnapshot(fn, function(){}); }catch(e){} }
   function applyStatus(){ inbox.forEach(function(r){ if(statusMap[r.id]) r.st = statusMap[r.id]; }); }
   function saveLists(){
     if(!DB || !isStaff || !isCounselor) return;
     var js = JSON.stringify([students, teachers]); if(js === lastLists) return; lastLists = js;
+    audit("تحديث القوائم", "طالبات "+students.length+" · معلمات "+teachers.length);
     DB.doc("lists/main").set({students:students, teachers:teachers}).catch(function(){ toast("تعذّر حفظ القوائم"); });
     peopleSave();
   }
@@ -2963,6 +2991,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
       }
       tfRedrawAll(); return true;
     }
+    audit("دخول", "فتح الموقع");
     try{ if(!prefillMe()) setTimeout(function(){ try{ prefillMe(); }catch(e){} }, 3000); }catch(e){}
     if(!DB) return;
     booked = {}; bookDraw();
@@ -3014,6 +3043,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     inbox = []; bookings = []; scResults = []; PL = []; students = []; teachers = [];
     inboxDraw(); bookDraw(); scTableDraw(); renderList();
     onColl("inbox", function(sn){ inbox = flatOwn(sn).sort(function(a,b){ return b.id - a.id; }); applyStatus(); inboxDraw(); nfCheck("inbox", inbox, function(r){ return r.k === "شكر وتقدير" ? "رسالة شكر وتقدير جديدة" : r.u ? "استشارة عاجلة" : "رسالة جديدة ("+r.k+")"; }); refreshDash(); });
+    if(isStaff && isCounselor) onColl("audit", function(sn){ AUD = sn.docs.map(function(d){ return d.data(); }).filter(function(x){ return x && x.t; }).sort(function(a,b){ return (b.t || 0) - (a.t || 0); }); audDraw(); });
     onColl("lagRows", function(sn){ LAGS = sn.docs.map(function(d){ return d.data(); }); lagDraw(); wkDraw(); nfCheck("lag", LAGS.map(function(d){ return Object.assign({}, d, {_ts:d.at}); }), function(d){ return "أرسلت "+(d.n || "معلمة")+" بيانات جديدة"; }, function(d){ return (d.n || "") + "|" + d.at; }); });
     onDoc("inboxStatus/main", function(sn){ statusMap = (sn.exists && sn.data().map) || {}; applyStatus(); inboxDraw(); refreshDash(); });
     onColl("bookings", function(sn){ bookings = flat(sn); bookDraw(); nfCheck("book", bookings, function(){ return "حجز جديد"; }); refreshDash(); });
@@ -3294,17 +3324,17 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     var b = e.target.closest("[data-ithx]"); if(!b || !isStaff || !isCounselor) return;
     var r = inbox.filter(function(x){ return x.id === +b.dataset.ithx; })[0]; if(!r) return;
     if(THX.some(function(x){ return x.id === r.id; })){ toast("منشورة مسبقًا"); return; }
-    THX.unshift({id:r.id, to:r.to||"", tn:r.tn||"", t:r.t}); thxDraw();
+    THX.unshift({id:r.id, to:r.to||"", tn:r.tn||"", t:r.t}); thxDraw(); audit("نشر شكر", "في جدار الشكر");
     var p = hstSave(true); toast("نُشرت في جدار الشكر دون اسم المرسِلة");
   });
   $("#thxList").addEventListener("click", function(e){
     var b = e.target.closest("[data-thxdel]"); if(!b) return;
-    THX.splice(+b.dataset.thxdel, 1); thxDraw(); hstSave(true);
+    THX.splice(+b.dataset.thxdel, 1); thxDraw(); hstSave(true); audit("إزالة شكر", "من جدار الشكر");
   });
   $("#inboxTable").addEventListener("click", async function(e){
     var b = e.target.closest("[data-idel]"); if(!b || !DB || !isStaff || !isCounselor) return;
     if(!b.classList.contains("armed")){ b.classList.add("armed"); b.textContent = "تأكيد الحذف؟"; setTimeout(function(){ if(b.isConnected){ b.classList.remove("armed"); b.textContent = "حذف"; } }, 4000); return; }
-    try{ await inboxRemove([{id:+b.dataset.idel, o:b.dataset.io}]); toast("تم حذف الرسالة"); }catch(err){ toast("تعذّر الحذف"); }
+    try{ await inboxRemove([{id:+b.dataset.idel, o:b.dataset.io}]); audit("حذف رسالة", "من الوارد"); toast("تم حذف الرسالة"); }catch(err){ toast("تعذّر الحذف"); }
   });
   $("#inboxDelDone").addEventListener("click", async function(){
     var b = this; if(!DB || !isStaff || !isCounselor) return;
