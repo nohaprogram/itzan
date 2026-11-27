@@ -525,6 +525,9 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
       <div class="scroll"><table id="rpTable"></table></div>
       <div class="actions"><button type="button" class="btn" id="rpDl">تنزيل التقرير (Word)</button></div>
       <p class="hint">تُحسب الرسائل والحجوزات والاستشارات والمقاييس وطلبات المشاركة بتاريخ ورودها. أما الشواهد والبرامج والمستفيدات فهي حصيلة العام كاملًا.</p>
+      <h3 class="section-title" style="margin-top:26px">الطالبات المتأخرات دراسيًا (من بيانات المعلمات)</h3>
+      <p class="hint" id="lagInfo"></p>
+      <div class="scroll"><table id="lagTable"></table></div>
       <h3 class="section-title" style="margin-top:26px">نسخة احتياطية للبيانات</h3>
       <div class="card form">
         <p style="margin:0 0 8px">تنزيل كل بيانات المنصة (الرسائل والحجوزات والقوائم والبرامج والشواهد…) في ملف واحد تحتفظين به. لا يشمل رموز دخول المعلمات.</p>
@@ -1937,7 +1940,16 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
       if(!dl){ toast("تعذّر التنزيل في هذا المتصفح"); return; }
       await dl.save({filename:"بيان المتأخرات دراسيًا.docx", data:await fillDocx("form6", v)});
       toast("تم تنزيل الملف");
+      lagShare(rows);
     }catch(e){ if(e && e.code === "declined") return; toast("تعذر تجهيز الملف، حاولي مرة أخرى"); }
+  }
+  async function lagShare(rows){
+    try{
+      var em = ""; try{ em = (JSON.parse(localStorage.getItem("itzan.session.v1")||"{}").email || ""); }catch(e){}
+      var m = em.match(/^t(\d+)@teachers\.example\.com$/i); if(!m || !DB) return;
+      await DB.doc("lagRows/"+m[1]).set({n:S.T.teacher || "", subject:S.T.subject || "", term:S.h.term, date:S.h.date || "", at:Date.now(),
+        rows:rows.map(function(r){ var st = stu(r.sid) || {}; return {sid:r.sid, n:st.n || "", cls:st.cls || "", grade:r.grade || "", rs:r.rs || "", act:r.act || ""}; })});
+    }catch(e){}
   }
   function wx(t){ return String(t == null ? "" : t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
   function wp(t, o){ o = o || {};
@@ -2686,6 +2698,22 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     try{ await repSave("تقرير وحدة توجيه الطالبات.docx", await repDocx()); toast("تم تنزيل التقرير"); }
     catch(e){ if(e && e.code === "declined") return; toast("تعذر تجهيز التقرير"); }
   });
+  var LAGS = [];
+  function lagAgg(){
+    var m = {};
+    LAGS.forEach(function(d){ (d.rows || []).forEach(function(r){
+      var k = r.sid || r.n; if(!k) return; var o = m[k] || (m[k] = {n:r.n, cls:r.cls, subs:[]});
+      o.subs.push({t:d.n, s:d.subject, g:r.grade, rs:r.rs});
+    }); });
+    return Object.keys(m).map(function(k){ return m[k]; }).sort(function(a,b){ return b.subs.length - a.subs.length || String(a.n).localeCompare(b.n, "ar"); });
+  }
+  function lagDraw(){
+    var el = $("#lagTable"); if(!el) return;
+    var a = lagAgg();
+    $("#lagInfo").textContent = LAGS.length ? "من "+arNum(LAGS.length)+" معلمة سجّلن بياناتهن، وعدد الطالبات: "+arNum(a.length) : "لم تسجّل أي معلمة بيانها بعد (تظهر هنا بعد تنزيل المعلمة للبيان).";
+    el.innerHTML = a.length ? '<thead><tr><th>الطالبة</th><th>الصف</th><th>عدد المواد</th><th>المواد والدرجات والأسباب</th></tr></thead><tbody>'+a.map(function(o){
+      return '<tr><td>'+esc(o.n)+'</td><td>'+esc(o.cls)+'</td><td>'+arNum(o.subs.length)+'</td><td>'+o.subs.map(function(x){ return esc(x.s || x.t)+(x.g ? ' ('+esc(x.g)+')' : '')+(x.rs ? ' — '+esc(x.rs) : ''); }).join('<br>')+'</td></tr>'; }).join("")+'</tbody>' : '';
+  }
   var BKK = "itzan.lastBackup";
   function bkInfo(){
     var t = 0; try{ t = +localStorage.getItem(BKK) || 0; }catch(e){}
@@ -2694,7 +2722,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     var d = Math.floor((Date.now() - t) / 86400000);
     el.textContent = "آخر نسخة: قبل "+arNum(d)+" يومًا"+(d > 30 ? " — يُفضّل تحديثها." : ".");
   }
-  function repDraw2(){ repDraw(); bkInfo(); }
+  function repDraw2(){ repDraw(); bkInfo(); lagDraw(); }
   var bkDl = $("#bkDl");
   if(bkDl) bkDl.addEventListener("click", async function(){
     if(!window.itzanAuth || !itzanAuth.on){ toast("النسخة الاحتياطية تعمل على الموقع المباشر فقط"); return; }
@@ -2859,6 +2887,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     inbox = []; bookings = []; scResults = []; PL = []; students = []; teachers = [];
     inboxDraw(); bookDraw(); scTableDraw(); renderList();
     onColl("inbox", function(sn){ inbox = flatOwn(sn).sort(function(a,b){ return b.id - a.id; }); applyStatus(); inboxDraw(); refreshDash(); });
+    onColl("lagRows", function(sn){ LAGS = sn.docs.map(function(d){ return d.data(); }); lagDraw(); });
     onDoc("inboxStatus/main", function(sn){ statusMap = (sn.exists && sn.data().map) || {}; applyStatus(); inboxDraw(); refreshDash(); });
     onColl("bookings", function(sn){ bookings = flat(sn); bookDraw(); refreshDash(); });
     onColl("scaleResults", function(sn){ var all = flat(sn).sort(function(a,b){ return b.id - a.id; }); scResults = all.filter(function(r){ return r.k !== "pl"; }); PL = all.filter(function(r){ return r.k === "pl"; }); scTableDraw(); refreshDash(); plStats(); });
