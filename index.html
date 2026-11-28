@@ -535,6 +535,12 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     </div>
     <p class="hint" id="disInfo"></p>
     <div id="disList"></div>
+    <h3 class="section-title" style="margin-top:22px">ترشيحات المراقبات</h3>
+    <p class="hint" id="nmInfo"></p>
+    <div id="nmList"></div>
+    <details style="margin:18px 0"><summary><b>تحديد المراقبات</b> (يظهر لهن تبويب الترشيح عند دخولهن بكودهن)</summary>
+      <div id="monList" class="chips" style="margin-top:8px"></div>
+    </details>
     <div class="actions"><button type="button" class="btn" id="disAll">شهادات الشهر كلها (Word للطباعة)</button><button type="button" class="btn ghost" id="disImgAll">صور الشهادات كلها (ملف مضغوط للإرسال أو للفيديو)</button></div>
   </div>
   <div id="d-rep" hidden>
@@ -876,11 +882,13 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     <button class="tab" type="button" data-t="plan" aria-pressed="false">سجل الخطة العلاجية</button>
     <button class="tab" type="button" data-t="honor" aria-pressed="false">المتفوقات والمتحسنات</button>
     <button class="tab" type="button" data-t="lag" aria-pressed="false">بيان المتأخرات دراسيًا</button>
+    <button class="tab" type="button" data-t="dis" id="tfDisTab" aria-pressed="false" hidden>ترشيح المنضبطات</button>
   </div>
   <div id="tfWeekly"></div>
   <div id="tfPlan" hidden></div>
   <div id="tfHonor" hidden></div>
   <div id="tfLag" hidden></div>
+  <div id="tfDis" hidden></div>
 </section>
 
 <!-- الحجز -->
@@ -2235,7 +2243,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     }
     if((b = e.target.closest("#tfTabs [data-t]"))){
       $$("#tfTabs .tab").forEach(function(x){ x.setAttribute("aria-pressed", x === b); });
-      $("#tfWeekly").hidden = b.dataset.t !== "weekly"; $("#tfPlan").hidden = b.dataset.t !== "plan"; $("#tfHonor").hidden = b.dataset.t !== "honor"; $("#tfLag").hidden = b.dataset.t !== "lag"; return;
+      $("#tfWeekly").hidden = b.dataset.t !== "weekly"; $("#tfPlan").hidden = b.dataset.t !== "plan"; $("#tfHonor").hidden = b.dataset.t !== "honor"; $("#tfLag").hidden = b.dataset.t !== "lag"; $("#tfDis").hidden = b.dataset.t !== "dis"; if(b.dataset.t === "dis") nomDraw(); return;
     }
     if((b = e.target.closest("[data-act]"))){
       var a = b.dataset.act, i = +b.dataset.i;
@@ -2856,9 +2864,71 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
   }
   function disKey(){ return $("#disY").value+"-"+("0"+$("#disM").value).slice(-2); }
   function disLabel(){ return HM[+$("#disM").value - 1]+" "+$("#disY").value+" هـ"; }
-  function disSave(){ if(DB && isStaff) DB.doc("config/disc").set({m:DIS}).catch(function(){ toast("تعذّر الحفظ"); }); }
+  var MONS = [], NOM = {};
+  function disSave(){ if(DB && isStaff && isCounselor) DB.doc("lists/disc").set({m:DIS, mons:MONS}).catch(function(){ toast("تعذّر الحفظ"); }); }
+  function monDraw(){
+    var el = $("#monList"); if(!el) return;
+    el.innerHTML = teachers.map(function(t){ var on = MONS.indexOf(String(t.id)) > -1; return '<button type="button" class="tab" data-mon="'+esc(t.id)+'" aria-pressed="'+on+'">'+esc(t.n)+'</button>'; }).join("");
+  }
+  function nmDraw(){
+    var el = $("#nmList"); if(!el) return;
+    var k = disKey(), have = {}; (DIS[k] || []).forEach(function(x){ have[x.id] = 1; });
+    var rows = [];
+    LAGS.forEach(function(d){ ((d.dis || {})[k] || []).forEach(function(x){ rows.push({by:d.n || "مراقبة", x:x}); }); });
+    var fresh = rows.filter(function(r){ return !have[r.x.id]; });
+    $("#nmInfo").textContent = rows.length ? "ترشيحات "+disLabel()+": "+arNum(rows.length)+" ("+arNum(fresh.length)+" بانتظار اعتمادك)" : "لا توجد ترشيحات لـ"+disLabel()+" بعد.";
+    el.innerHTML = rows.map(function(r){
+      var ok = have[r.x.id];
+      return '<div class="card" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:8px"><b style="flex:1;min-width:140px">'+esc(r.x.n)+'</b><span style="color:var(--muted)">'+esc(r.x.cls || "")+' · رشّحتها '+esc(r.by)+'</span>'+(ok ? '<span class="pill good">معتمدة</span>' : '<button type="button" class="btn ghost" data-nmok="'+r.x.id+'">اعتماد</button>')+'</div>';
+    }).join("") + (fresh.length ? '<div class="actions"><button type="button" class="btn" id="nmAll">اعتماد كل الترشيحات</button></div>' : "");
+  }
+  function nmApprove(ids){
+    var k = disKey(), have = {}; (DIS[k] = DIS[k] || []).forEach(function(x){ have[x.id] = 1; });
+    LAGS.forEach(function(d){ ((d.dis || {})[k] || []).forEach(function(x){ if(ids.indexOf(String(x.id)) > -1 && !have[x.id]){ have[x.id] = 1; DIS[k].push({id:x.id, n:x.n, cls:x.cls || ""}); } }); });
+    disSave(); audit("اعتماد منضبطات", disLabel()); disDraw();
+  }
+  /* واجهة المراقبة */
+  var myMon = false;
+  function nomShowTab(){ var b = $("#tfDisTab"); if(b) b.hidden = !myMon; }
+  async function nomLoad(){
+    var id = myTid(); if(!id || !DB) return;
+    try{ var sn = await DB.doc("lagRows/"+id).get(); NOM = (sn.exists && sn.data().dis) || {}; }catch(e){}
+  }
+  function nomKey(){ return $("#nY").value+"-"+("0"+$("#nM").value).slice(-2); }
+  function nomLabel(){ return HM[+$("#nM").value - 1]+" "+$("#nY").value+" هـ"; }
+  function nomDraw(){
+    var box = $("#tfDis"); if(!box) return;
+    if(!$("#nY")){
+      var now = new Date(), pt = {}; try{ new Intl.DateTimeFormat("en-u-ca-islamic-umalqura", {year:"numeric", month:"numeric"}).formatToParts(now).forEach(function(p){ pt[p.type] = p.value; }); }catch(e){}
+      var cy = parseInt(pt.year, 10) || 1448, cm = parseInt(pt.month, 10) || 1;
+      box.innerHTML = '<div class="card form"><div class="row"><label for="nY">السنة (هـ)<select id="nY">'+[cy-1, cy, cy+1].map(function(y){ return '<option value="'+y+'"'+(y === cy ? ' selected' : '')+'>'+arNum(y)+'</option>'; }).join("")+'</select></label><label for="nM">الشهر<select id="nM">'+HM.map(function(m, i){ return '<option value="'+(i+1)+'"'+(i+1 === cm ? ' selected' : '')+'>'+m+'</option>'; }).join("")+'</select></label></div><label for="nQ">رشّحي طالبة: اكتبي جزءًا من اسمها<input type="text" id="nQ" autocomplete="off" placeholder="مثال: سارة"></label><div id="nRes" class="chips"></div></div><p class="hint">ما ترشّحينه يصل إلى موجهة الطالبات لتعتمده، ثم تُنشأ شهادات الشكر.</p><div id="nList"></div>';
+    }
+    var l = NOM[nomKey()] || [];
+    $("#nList").innerHTML = l.length ? l.map(function(x, i){ return '<div class="card" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:8px"><b style="flex:1;min-width:140px">'+esc(x.n)+'</b><span style="color:var(--muted)">'+esc(x.cls || "")+'</span><button type="button" class="x" data-nomdel="'+i+'">إزالة</button></div>'; }).join("") : '<p class="hint">لم ترشّحي طالبات لـ'+nomLabel()+' بعد.</p>';
+  }
+  function nomSearch(){
+    var q = ($("#nQ").value || "").trim(), box = $("#nRes"); if(!q){ box.innerHTML = ""; return; }
+    var have = {}; (NOM[nomKey()] || []).forEach(function(x){ have[x.id] = 1; });
+    var hit = students.filter(function(x){ return String(x.n).indexOf(q) > -1 && !have[x.id]; }).slice(0, 8);
+    box.innerHTML = hit.length ? hit.map(function(x){ return '<button type="button" class="chip" data-nomadd="'+x.id+'">'+esc(x.n)+' — '+esc(x.cls || "")+'</button>'; }).join("") : '<span class="hint">لا توجد نتائج</span>';
+  }
+  async function nomSave(){ try{ await shareMerge({dis:NOM}); audit("ترشيح منضبطات", nomLabel()); toast("وصل الترشيح إلى موجهة الطالبات"); }catch(e){ toast("تعذّر الإرسال"); } }
+  document.addEventListener("input", function(e){ if(e.target && e.target.id === "nQ") nomSearch(); });
+  document.addEventListener("change", function(e){ if(e.target && (e.target.id === "nY" || e.target.id === "nM")){ nomDraw(); nomSearch(); } });
+  document.addEventListener("click", function(e){
+    var t = e.target && e.target.closest ? e.target : null; if(!t) return;
+    var a = t.closest("[data-nomadd]");
+    if(a){ var st = stu(a.dataset.nomadd); if(!st) return; var k = nomKey(); (NOM[k] = NOM[k] || []).push({id:st.id, n:st.n, cls:st.cls || ""}); $("#nQ").value = ""; nomSearch(); nomDraw(); nomSave(); return; }
+    var d = t.closest("[data-nomdel]");
+    if(d){ (NOM[nomKey()] || []).splice(+d.dataset.nomdel, 1); nomDraw(); nomSave(); return; }
+    if(!isStaff || !isCounselor) return;
+    var m = t.closest("[data-mon]");
+    if(m){ var id = m.dataset.mon, ix = MONS.indexOf(id); if(ix > -1) MONS.splice(ix, 1); else MONS.push(id); disSave(); monDraw(); return; }
+    var ok = t.closest("[data-nmok]"); if(ok){ nmApprove([ok.dataset.nmok]); return; }
+    if(t.closest("#nmAll")){ var ids = []; LAGS.forEach(function(d2){ ((d2.dis || {})[disKey()] || []).forEach(function(x){ ids.push(String(x.id)); }); }); nmApprove(ids); }
+  });
   function disDraw(){
-    disInit(); if(!$("#disList")) return;
+    disInit(); if(!$("#disList")) return; monDraw(); nmDraw();
     var l = DIS[disKey()] || [];
     $("#disInfo").textContent = l.length ? "منضبطات "+disLabel()+": "+arNum(l.length)+" طالبة" : "لم تُضَف طالبات لـ"+disLabel()+" بعد.";
     $("#disList").innerHTML = l.map(function(x, i){
@@ -3211,7 +3281,10 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
       if(sn.exists && sn.data().people && !isStaff){ PEOPLE = sn.data().people; peopleDraw(); }
       if(sn.exists && sn.data().items && sn.data().items.length){ HST = sn.data().items.map(function(x){ return {l:x.l, s:x.s || "", m:x.m || 0, n:x.n || 0, auto:x.a || [], ic:x.ic || "star"}; }); if(isStaff){ hstCalc(); } hstDraw(); }
     });
-    if(isStaff && isCounselor) onDoc("config/disc", function(sn){ DIS = sn.exists ? (sn.data().m || {}) : {}; if(!$("#d-dis").hidden) disDraw(); });
+    if(isStaff){
+      onDoc("lists/disc", function(sn){ var d0 = sn.exists ? sn.data() : {}; DIS = d0.m || {}; MONS = d0.mons || []; myMon = !!(myTid() && MONS.indexOf(myTid()) > -1); nomShowTab(); if(myMon) nomLoad(); if($("#d-dis") && !$("#d-dis").hidden) disDraw(); });
+      if(isCounselor) DB.doc("config/disc").get().then(function(o){ var dd = o && o.exists ? o.data() : null; if(dd && !dd.moved && Object.keys(dd.m || {}).length){ DB.doc("lists/disc").get().then(function(c){ var cur = c && c.exists ? c.data() : {}; return DB.doc("lists/disc").set({m:Object.assign({}, dd.m, cur.m || {}), mons:cur.mons || []}); }).then(function(){ return DB.doc("config/disc").set({m:{}, moved:true}); }).catch(function(){}); } }).catch(function(){});
+    }
     onDoc("config/scales", function(sn){
       if(sn.exists && sn.data().list && sn.data().list.length){ scales = sn.data().list; scalesDraw(); }
     });
@@ -3232,7 +3305,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     inboxDraw(); bookDraw(); scTableDraw(); renderList();
     onColl("inbox", function(sn){ inbox = flatOwn(sn).sort(function(a,b){ return b.id - a.id; }); applyStatus(); inboxDraw(); nfCheck("inbox", inbox, function(r){ return r.k === "شكر وتقدير" ? "رسالة شكر وتقدير جديدة" : r.u ? "استشارة عاجلة" : "رسالة جديدة ("+r.k+")"; }); refreshDash(); });
     if(isStaff && isCounselor) onColl("audit", function(sn){ AUD = sn.docs.map(function(d){ return d.data(); }).filter(function(x){ return x && x.t; }).sort(function(a,b){ return (b.t || 0) - (a.t || 0); }); audDraw(); });
-    onColl("lagRows", function(sn){ LAGS = sn.docs.map(function(d){ return d.data(); }); lagDraw(); wkDraw(); nfCheck("lag", LAGS.map(function(d){ return Object.assign({}, d, {_ts:d.at}); }), function(d){ return "أرسلت "+(d.n || "معلمة")+" بيانات جديدة"; }, function(d){ return (d.n || "") + "|" + d.at; }); });
+    onColl("lagRows", function(sn){ LAGS = sn.docs.map(function(d){ return d.data(); }); lagDraw(); wkDraw(); try{ nmDraw(); }catch(e){} nfCheck("lag", LAGS.map(function(d){ return Object.assign({}, d, {_ts:d.at}); }), function(d){ return "أرسلت "+(d.n || "معلمة")+" بيانات جديدة"; }, function(d){ return (d.n || "") + "|" + d.at; }); });
     onDoc("inboxStatus/main", function(sn){ statusMap = (sn.exists && sn.data().map) || {}; applyStatus(); inboxDraw(); refreshDash(); });
     onColl("bookings", function(sn){ bookings = flat(sn); bookDraw(); nfCheck("book", bookings, function(){ return "حجز جديد"; }); refreshDash(); });
     onColl("scaleResults", function(sn){ var all = flat(sn).sort(function(a,b){ return b.id - a.id; }); scResults = all.filter(function(r){ return r.k !== "pl"; }); PL = all.filter(function(r){ return r.k === "pl"; }); scTableDraw(); refreshDash(); plStats(); });
