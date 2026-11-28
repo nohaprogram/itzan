@@ -2519,8 +2519,8 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
       h += '<div class="zone zone-t"><h3>لموجهة الطالبات والمعلمات الموكلات</h3><div class="hint">لا يظهر هذا القسم للطالبات.</div>'+
         '<div class="tabs" role="group" aria-label="أقسام البرنامج">'+T.map(function(t){ return '<button class="tab" type="button" data-act="stab" data-t="'+t[0]+'" aria-pressed="'+(stTab===t[0])+'">'+t[1]+'</button>'; }).join("")+'</div>';
       if(stTab === "ev"){
-        h += (ev.length ? '<ul class="plain">'+ev.map(function(x,i){ return '<li><b>'+esc(x.t)+'</b>'+(x.dt?' · '+esc(x.dt):'')+(x.d?'<div style="font-size:14px">'+esc(x.d)+'</div>':'')+(safeUrl(x.url)?'<div style="font-size:14px"><a href="'+esc(safeUrl(x.url))+'" target="_blank" rel="noopener">🔗 '+esc(x.ul || "فتح الرابط")+'</a></div>':'')+'<div class="hint">التصنيف: '+evCatSelect(x.cat || "", 'data-evc="'+i+'"')+' <label style="white-space:nowrap"><input type="checkbox" data-evnc="'+i+'"'+(x.nc ? '' : ' checked')+'> يُحسب ضمن البرامج</label> العدد: <input type="number" min="1" style="width:70px" data-evn="'+i+'" value="'+(x.cnt === undefined ? 1 : x.cnt)+'"> المستفيدات: <input type="number" min="0" style="width:80px" data-evb="'+i+'" value="'+(+x.ben || 0)+'"></div>'+thumbsStaff(x.fs, i)+' <button class="btn small ghost" type="button" data-act="evpub" data-i="'+i+'">'+(x.pub?'👁 يظهر للطالبات وأولياء الأمور — إخفاء':'🔒 مخفي — إظهار للجميع')+'</button>'+rmBtn("evidence",pid,i)+'</li>'; }).join("")+'</ul>' : '<p class="hint">لا توجد شواهد بعد.</p>')+
-          '<details class="addbox"><summary>+ إضافة شاهد</summary><form class="form" data-f="ev"><div class="row"><label for="evT">عنوان الشاهد<input type="text" id="evT" required placeholder="مثال: محاضرة توعوية"></label><label for="evDt">التاريخ<input type="text" id="evDt" placeholder="مثال: ١٤٤٨/٠٣/١٥"></label></div><label for="evD">وصف مختصر<textarea id="evD"></textarea></label><label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="evP"> يظهر هذا الشاهد لأولياء الأمور والطالبات</label><div class="row"><label for="evC">التصنيف في إحصائيات الرئيسية'+evCatSelect("", 'id="evC"')+'</label><label for="evN">العدد (مثل ٦ لقاءات)<input type="number" id="evN" min="1" value="1"></label><label for="evB">عدد المستفيدات<input type="number" id="evB" min="0" value="0"></label></div><div class="row"><label for="evU">رابط موقع أو منصة (اختياري)<input type="url" id="evU" dir="ltr" placeholder="https://"></label><label for="evUl">اسم الرابط<input type="text" id="evUl" placeholder="مثال: منصة سَعَة"></label></div>'+dropZone("ev")+'<div><button class="btn" type="submit">إضافة الشاهد</button></div></form></details>';
+        h += (ev.length ? '<ul class="plain">'+ev.map(function(x,i){ return '<li><b>'+esc(x.t)+'</b>'+(x.par?' <span class="tag">شاهد إضافي لـ «'+esc(x.par)+'»</span>':'')+(x.dt?' · '+esc(x.dt):'')+(x.d?'<div style="font-size:14px">'+esc(x.d)+'</div>':'')+(safeUrl(x.url)?'<div style="font-size:14px"><a href="'+esc(safeUrl(x.url))+'" target="_blank" rel="noopener">🔗 '+esc(x.ul || "فتح الرابط")+'</a></div>':'')+'<div class="hint">التصنيف: '+evCatSelect(x.cat || "", 'data-evc="'+i+'"')+' <label style="white-space:nowrap"><input type="checkbox" data-evnc="'+i+'"'+(x.nc ? '' : ' checked')+'> يُحسب ضمن البرامج</label> العدد: <input type="number" min="1" style="width:70px" data-evn="'+i+'" value="'+(x.cnt === undefined ? 1 : x.cnt)+'"> المستفيدات: <input type="number" min="0" style="width:80px" data-evb="'+i+'" value="'+(+x.ben || 0)+'"></div>'+thumbsStaff(x.fs, i)+' <button class="btn small ghost" type="button" data-act="evpub" data-i="'+i+'">'+(x.pub?'👁 يظهر للطالبات وأولياء الأمور — إخفاء':'🔒 مخفي — إظهار للجميع')+'</button>'+rmBtn("evidence",pid,i)+'</li>'; }).join("")+'</ul>' : '<p class="hint">لا توجد شواهد بعد.</p>')+
+          '<details class="addbox"><summary>+ إضافة شاهد</summary><form class="form" data-f="ev"><label for="evFor">هذا الشاهد لـ<select id="evFor"><option value="">فعالية جديدة (تُحسب في العداد)</option>'+evOpts(ev)+'</select></label><div class="row"><label for="evT">عنوان الشاهد<input type="text" id="evT" required placeholder="مثال: محاضرة توعوية"></label><label for="evDt">التاريخ<input type="text" id="evDt" placeholder="مثال: ١٤٤٨/٠٣/١٥"></label></div><label for="evD">وصف مختصر<textarea id="evD"></textarea></label><label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="evP"> يظهر هذا الشاهد لأولياء الأمور والطالبات</label><div class="row"><label for="evC">التصنيف في إحصائيات الرئيسية'+evCatSelect("", 'id="evC"')+'</label><label for="evN">العدد (مثل ٦ لقاءات)<input type="number" id="evN" min="1" value="1"></label><label for="evB">عدد المستفيدات<input type="number" id="evB" min="0" value="0"></label></div><div class="row"><label for="evU">رابط موقع أو منصة (اختياري)<input type="url" id="evU" dir="ltr" placeholder="https://"></label><label for="evUl">اسم الرابط<input type="text" id="evUl" placeholder="مثال: منصة سَعَة"></label></div>'+dropZone("ev")+'<div><button class="btn" type="submit">إضافة الشاهد</button></div></form></details>';
       } else if(stTab === "ini"){
         h += (ini.length ? '<ul class="plain">'+ini.map(function(x,i){ return '<li><b>'+esc(x.t)+'</b>'+(x.type?' <span class="tag">'+esc(x.type)+'</span>':'')+(safeUrl(x.url)?' <a href="'+esc(safeUrl(x.url))+'" target="_blank" rel="noopener">فتح الرابط ‹</a>':'')+' <select data-ini="'+pid+'|'+i+'" aria-label="حالة المبادرة">'+INI_ST.map(function(o){ return '<option'+(o===x.st?' selected':'')+'>'+o+'</option>'; }).join("")+'</select>'+(x.d?'<div style="font-size:14px">'+esc(x.d)+'</div>':'')+thumbs(x.fs)+'<div><label class="check"><input type="checkbox" data-pubini="'+pid+'|'+i+'"'+(x.pub?' checked':'')+'>ظاهرة للطالبات</label>'+rmBtn("initiatives",pid,i)+'</div></li>'; }).join("")+'</ul>' : '<p class="hint">لا توجد مبادرات بعد.</p>')+
           '<details class="addbox"><summary>+ إضافة مبادرة</summary><form class="form" data-f="ini"><div class="row"><label for="inT">اسم المبادرة<input type="text" id="inT" required></label><label for="inS">الحالة<select id="inS">'+INI_ST.map(function(o){ return '<option>'+o+'</option>'; }).join("")+'</select></label></div><div class="row"><label for="inTy">النوع<select id="inTy">'+INI_TYPES.map(function(o){ return '<option>'+o+'</option>'; }).join("")+'</select></label><label for="inU">رابط الموقع أو التطبيق (اختياري)<input type="url" id="inU" placeholder="https://" dir="ltr"></label></div><label class="check"><input type="checkbox" id="inP">إظهارها للطالبات</label><label for="inD">وصف مختصر<textarea id="inD"></textarea></label>'+dropZone("ini")+'<div><button class="btn" type="submit">إضافة المبادرة</button></div></form></details>';
@@ -2669,7 +2669,8 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
         try{ fs = await uploadFiles(PEND[k]); }catch(err){ toast("تعذّر رفع الملفات"); if(btn) btn.disabled = false; return; }
         PEND[k] = [];
       }
-      if(f === "ev") arr(PROG.evidence, pid).push({t:v("evT"), dt:v("evDt"), d:v("evD"), url:safeUrl(v("evU")), ul:v("evUl"), pub:$("#evP").checked, cat:$("#evC").value, cnt:+$("#evN").value || 1, ben:+$("#evB").value || 0, fs:fs});
+      if(f === "ev" && $("#evFor") && $("#evFor").value){ var par = $("#evFor").value; arr(PROG.evidence, pid).push({t:v("evT") || par, par:par, nc:true, dt:v("evDt"), d:v("evD"), url:safeUrl(v("evU")), ul:v("evUl"), pub:$("#evP").checked, cat:"", cnt:1, ben:+$("#evB").value || 0, fs:fs}); }
+      else if(f === "ev") arr(PROG.evidence, pid).push({t:v("evT"), dt:v("evDt"), d:v("evD"), url:safeUrl(v("evU")), ul:v("evUl"), pub:$("#evP").checked, cat:$("#evC").value, cnt:+$("#evN").value || 1, ben:+$("#evB").value || 0, fs:fs});
       else arr(PROG.initiatives, pid).push({t:v("inT"), st:v("inS"), d:v("inD"), type:v("inTy"), url:safeUrl(v("inU")), pub:$("#inP").checked, fs:fs});
       saveStf(); savePub();
     }
@@ -3279,7 +3280,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
       if(sn.exists && !isStaff && sn.data().tot !== undefined){ HSTTOT = sn.data().tot; HPROGS = sn.data().progs || []; }
       if(sn.exists){ var hd = sn.data(); THX = hd.thx || []; thxDraw(); HSTBM = +hd.bm || 0; HSTOV = (hd.ov === undefined ? 16 : (+hd.ov || 0)); if(!isStaff && HSTOV > 0) HSTTOT = HSTOV; if($("#hsOv")) $("#hsOv").value = HSTOV || ""; if(!isStaff) HSTBEN = +hd.ben || 0; if($("#hsBm")) $("#hsBm").value = HSTBM; reachDraw(); }
       if(sn.exists && sn.data().people && !isStaff){ PEOPLE = sn.data().people; peopleDraw(); }
-      if(sn.exists && sn.data().items && sn.data().items.length){ HST = sn.data().items.map(function(x){ return {l:x.l, s:x.s || "", m:x.m || 0, n:x.n || 0, auto:x.a || [], ic:x.ic || "star"}; }); if(isStaff){ hstCalc(); } hstDraw(); }
+      if(sn.exists && sn.data().items && sn.data().items.length){ HST = sn.data().items.map(function(x){ var ov = x.ov === undefined ? (/لقاءات الأمهات|مجالس/.test(x.l) ? 6 : /استضاف/.test(x.l) ? 3 : 0) : (+x.ov || 0); return {l:x.l, s:x.s || "", m:x.m || 0, n:ov > 0 ? ov : (x.n || 0), ov:ov, auto:x.a || [], ic:x.ic || "star"}; }); if(isStaff){ hstCalc(); } hstDraw(); }
     });
     if(isStaff){
       onDoc("lists/disc", function(sn){ var d0 = sn.exists ? sn.data() : {}; DIS = d0.m || {}; MONS = d0.mons || []; myMon = !!(myTid() && MONS.indexOf(myTid()) > -1); nomShowTab(); if(myMon) nomLoad(); if($("#d-dis") && !$("#d-dis").hidden) disDraw(); });
@@ -3449,7 +3450,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
 
   /* ---------- إحصائيات الرئيسية ---------- */
   // كل بند: l العنوان، s التفاصيل (اختياري)، m عدد يدوي يُضاف، n المحسوب النهائي (يُحفظ للزوار)
-  var HST = [{l:"لقاءات الأمهات", s:"", m:0, n:0, ic:"family"}, {l:"استضافات خارجية", s:"", m:1, n:1, ic:"mic"}];
+  var HST = [{l:"لقاءات الأمهات", s:"", m:0, n:6, ov:6, ic:"family"}, {l:"استضافات خارجية", s:"", m:1, n:3, ov:3, ic:"mic"}];
   var hstLast = "", HSTTOT = 0, HPROGS = [];
   var AR = "٠١٢٣٤٥٦٧٨٩";
   function arNum(n){ return String(n).replace(/\d/g, function(d){ return "٠١٢٣٤٥٦٧٨٩"[+d]; }); }
@@ -3490,7 +3491,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
       Object.keys(PROG.evidence).forEach(function(pid){ PROG.evidence[pid].forEach(function(e){
         if(e.cat === x.l){ cnt += (e.cnt === undefined ? 1 : (+e.cnt || 0)); names.push(e.t.replace(/\s*\(.*$|\s*–.*$/g, "").trim()); }
       }); });
-      x.n = (+x.m || 0) + cnt; x.auto = names;
+      x.n = (+x.m || 0) + cnt; x.auto = names; if(+x.ov > 0) x.n = +x.ov;
     });
   }
   function hstDraw(){
@@ -3498,7 +3499,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
       var det = x.s || (x.auto && x.auto.length && String(x.l).indexOf("استضاف") < 0 ? x.auto.join(" · ") : "");
       return '<div class="hst"'+pst(i)+'><div class="ico">'+icoSvg(x.ic)+'</div><b>'+arNum(+x.n || 0)+'</b><strong>'+esc(x.l)+'</strong>'+(det?'<small>'+esc(det)+'</small>':'')+'</div>'; }).join("");
     if ($("#hProgs")) $("#hProgs").innerHTML = HPROGS.map(function(x,i){ return '<div class="hst"'+pst(i+2)+'><b>'+arNum(x.n)+'</b><strong>'+esc(x.p)+'</strong></div>'; }).join("");
-    if(isStaff) $("#hsRows").innerHTML = HST.map(function(x,i){ return '<div class="hsrow"><input type="number" min="0" data-hn="'+i+'" value="'+(+x.m||0)+'" aria-label="عدد يدوي إضافي" title="عدد يدوي يُضاف إلى المحسوب من الشواهد"><input type="text" data-hl="'+i+'" value="'+esc(x.l)+'" aria-label="العنوان" placeholder="العنوان"><input type="text" data-hs="'+i+'" value="'+esc(x.s||"")+'" aria-label="التفاصيل" placeholder="التفاصيل (إن تُرك فارغًا تُكتب أسماء الشواهد تلقائيًا)"><select data-hi="'+i+'" aria-label="الأيقونة">'+Object.keys(ICONS).map(function(k){ return '<option value="'+k+'"'+(x.ic===k?' selected':'')+'>'+ICONS[k][0]+'</option>'; }).join("")+'</select><button class="x" type="button" data-hd="'+i+'">حذف</button></div>'; }).join("");
+    if(isStaff) $("#hsRows").innerHTML = HST.map(function(x,i){ return '<div class="hsrow"><input type="number" min="0" data-hn="'+i+'" value="'+(+x.m||0)+'" aria-label="عدد يدوي إضافي" title="عدد يدوي يُضاف إلى المحسوب من الشواهد"><input type="number" min="0" data-ho="'+i+'" value="'+(+x.ov||"")+'" aria-label="إجمالي ثابت" title="الإجمالي الثابت (اتركيه فارغًا ليُحسب من الشواهد)" placeholder="إجمالي ثابت"><input type="text" data-hl="'+i+'" value="'+esc(x.l)+'" aria-label="العنوان" placeholder="العنوان"><input type="text" data-hs="'+i+'" value="'+esc(x.s||"")+'" aria-label="التفاصيل" placeholder="التفاصيل (إن تُرك فارغًا تُكتب أسماء الشواهد تلقائيًا)"><select data-hi="'+i+'" aria-label="الأيقونة">'+Object.keys(ICONS).map(function(k){ return '<option value="'+k+'"'+(x.ic===k?' selected':'')+'>'+ICONS[k][0]+'</option>'; }).join("")+'</select><button class="x" type="button" data-hd="'+i+'">حذف</button></div>'; }).join("");
   }
   var THX = [];
   function thxDraw(){
@@ -3511,9 +3512,14 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
   function hstSave(force){
     if(!DB || !isStaff) return;
     hstCalc();
-    var js = JSON.stringify(HST.map(function(x){ return {l:x.l, s:x.s||"", m:+x.m||0, n:x.n, a:x.auto||[], ic:x.ic||"star"}; }));
+    var js = JSON.stringify(HST.map(function(x){ return {l:x.l, s:x.s||"", m:+x.m||0, ov:+x.ov||0, n:x.n, a:x.auto||[], ic:x.ic||"star"}; }));
     if(!force && (HSTTOT + js + JSON.stringify(HPROGS) + HSTBEN + '|' + HSTBM) === hstLast) return; hstLast = HSTTOT + js + JSON.stringify(HPROGS) + HSTBEN + '|' + HSTBM;
     var pr = DB.doc("config/homeStats").set({items:JSON.parse(js), people:PEOPLE || null, tot:HSTTOT, progs:HPROGS, ben:HSTBEN, bm:HSTBM, ov:HSTOV, thx:THX}); pr.catch(function(){}); return pr;
+  }
+  function evOpts(ev){
+    var seen = {}, o = "";
+    ev.forEach(function(x){ if(x.nc || x.par) return; var k = String(x.t || "").trim(); if(!k || seen[k]) return; seen[k] = 1; o += '<option value="'+esc(k)+'">'+esc(k)+'</option>'; });
+    return o;
   }
   function evCatSelect(cur, attrs){
     return '<select '+attrs+'><option value="">بدون تصنيف</option>'+evCats().map(function(c){ return '<option'+(c === cur ? ' selected' : '')+'>'+esc(c)+'</option>'; }).join("")+'</select>';
@@ -3545,6 +3551,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
   $("#hsRows").addEventListener("input", function(e){
     var t = e.target;
     if(t.dataset.hn !== undefined) HST[+t.dataset.hn].m = +t.value || 0;
+    else if(t.dataset.ho !== undefined) HST[+t.dataset.ho].ov = +t.value || 0;
     else if(t.dataset.hl !== undefined){ var old = HST[+t.dataset.hl].l; HST[+t.dataset.hl].l = t.value;
       Object.keys(PROG.evidence).forEach(function(pid){ PROG.evidence[pid].forEach(function(x){ if(x.cat === old) x.cat = t.value; }); }); }
     else if(t.dataset.hs !== undefined) HST[+t.dataset.hs].s = t.value;
