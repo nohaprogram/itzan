@@ -535,6 +535,12 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     </div>
     <p class="hint" id="disInfo"></p>
     <div id="disList"></div>
+    <h3 class="section-title" style="margin-top:22px">منضبطات الفصل الدراسي</h3>
+    <p class="hint">الطالبة المنضبطة في كل شهور الفصل (المحدَّدة أدناه) يظهر اسمها هنا لتكريمها بوسام.</p>
+    <div class="card form"><div class="row"><label for="trT">الفصل<select id="trT"><option value="1">الأول</option><option value="2">الثاني</option><option value="3">الثالث</option></select></label></div>
+      <div class="hint" style="margin:4px 0">شهور هذا الفصل (اضغطي لإضافة شهر أو إزالته):</div><div id="trMonths" class="chips"></div></div>
+    <p class="hint" id="trInfo"></p>
+    <div id="trList"></div>
     <h3 class="section-title" style="margin-top:22px">ترشيحات المراقبات</h3>
     <p class="hint" id="nmInfo"></p>
     <div id="nmList"></div>
@@ -2865,8 +2871,32 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
   }
   function disKey(){ return $("#disY").value+"-"+("0"+$("#disM").value).slice(-2); }
   function disLabel(){ return HM[+$("#disM").value - 1]+" "+$("#disY").value+" هـ"; }
-  var MONS = [], NOM = {};
-  function disSave(){ if(DB && isStaff && isCounselor) DB.doc("lists/disc").set({m:DIS, mons:MONS}).catch(function(){ toast("تعذّر الحفظ"); }); }
+  var MONS = [], NOM = {}, TM = {}, trToast = false;
+  var TMD = {"1":[3,4,5,6], "2":[7,8,9,10], "3":[11,12]};
+  function trKey(){ return $("#disY").value+"-"+$("#trT").value; }
+  function trMonths(){ var k = trKey(); return (TM[k] || TMD[$("#trT").value] || []).slice(); }
+  function trLabel(){ return ["","الأول","الثاني","الثالث"][+$("#trT").value]+" "+$("#disY").value+" هـ"; }
+  function trCompute(){
+    var ms = trMonths(), y = $("#disY").value; if(!ms.length) return {ms:ms, names:[], done:false};
+    var maps = ms.map(function(m){ var l = DIS[y+"-"+("0"+m).slice(-2)] || [], o = {}; l.forEach(function(x){ o[x.id] = x; }); return o; });
+    var names = Object.keys(maps[0]).filter(function(id){ return maps.every(function(o){ return o[id]; }); }).map(function(id){ return maps[0][id]; });
+    var done = maps.every(function(o){ return Object.keys(o).length > 0; });
+    return {ms:ms, names:names, done:done};
+  }
+  function trDraw(){
+    var el = $("#trList"); if(!el) return;
+    var r = trCompute(), tmo = {}; r.ms.forEach(function(m){ tmo[m] = 1; });
+    $("#trMonths").innerHTML = HM.map(function(n, i){ return '<button type="button" class="tab" data-trm="'+(i+1)+'" aria-pressed="'+!!tmo[i+1]+'">'+n+'</button>'; }).join("");
+    $("#trInfo").textContent = !r.ms.length ? "حدّدي شهور الفصل أولًا." : r.names.length ? "المنضبطات في جميع شهور الفصل ("+arNum(r.ms.length)+" شهور): "+arNum(r.names.length)+" طالبة"+(r.done ? "" : " — لم تكتمل قوائم كل الشهور بعد") : "لا توجد طالبة منضبطة في جميع شهور الفصل حتى الآن"+(r.done ? "." : "، وبعض الشهور لم تُضَف قوائمها بعد.");
+    el.innerHTML = r.names.map(function(x, i){ return '<div class="card" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:8px"><b style="flex:1;min-width:140px">'+esc(x.n)+'</b><span style="color:var(--muted)">'+esc(x.cls || "")+'</span><button type="button" class="btn ghost" data-trw="'+x.id+'">وسام Word</button><button type="button" class="btn ghost" data-trp="'+x.id+'">وسام صورة</button></div>'; }).join("");
+  }
+  function trAnnounce(){
+    if(trToast || !isStaff || !isCounselor || !$("#disY")) return; disInit();
+    var mo = new Date(), cur = 0; try{ var pp = {}; new Intl.DateTimeFormat("en-u-ca-islamic-umalqura", {month:"numeric"}).formatToParts(mo).forEach(function(p){ pp[p.type] = p.value; }); cur = parseInt(pp.month, 10); }catch(e){}
+    for(var t = 1; t <= 3; t++){ $("#trT").value = t; var r = trCompute(); if(r.ms.indexOf(cur) > -1 || t === 3){ if(r.done && r.names.length){ trToast = true; toast(arNum(r.names.length)+" طالبة منضبطة في جميع شهور الفصل "+["","الأول","الثاني","الثالث"][t]+" — تجدينهن في تبويب «المنضبطات»"); } break; } }
+    $("#trT").value = 1;
+  }
+  function disSave(){ if(DB && isStaff && isCounselor) DB.doc("lists/disc").set({m:DIS, mons:MONS, tm:TM}).catch(function(){ toast("تعذّر الحفظ"); }); }
   function monDraw(){
     var el = $("#monList"); if(!el) return;
     el.innerHTML = teachers.map(function(t){ var on = MONS.indexOf(String(t.id)) > -1; return '<button type="button" class="tab" data-mon="'+esc(t.id)+'" aria-pressed="'+on+'">'+esc(t.n)+'</button>'; }).join("");
@@ -2916,20 +2946,32 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
   async function nomSave(){ try{ await shareMerge({dis:NOM}); audit("ترشيح منضبطات", nomLabel()); toast("وصل الترشيح إلى موجهة الطالبات"); }catch(e){ toast("تعذّر الإرسال"); } }
   document.addEventListener("input", function(e){ if(e.target && e.target.id === "nQ") nomSearch(); });
   document.addEventListener("change", function(e){ if(e.target && (e.target.id === "nY" || e.target.id === "nM")){ nomDraw(); nomSearch(); } });
-  document.addEventListener("click", function(e){
+  document.addEventListener("click", async function(e){
     var t = e.target && e.target.closest ? e.target : null; if(!t) return;
     var a = t.closest("[data-nomadd]");
     if(a){ var st = stu(a.dataset.nomadd); if(!st) return; var k = nomKey(); (NOM[k] = NOM[k] || []).push({id:st.id, n:st.n, cls:st.cls || ""}); $("#nQ").value = ""; nomSearch(); nomDraw(); nomSave(); return; }
     var d = t.closest("[data-nomdel]");
     if(d){ (NOM[nomKey()] || []).splice(+d.dataset.nomdel, 1); nomDraw(); nomSave(); return; }
     if(!isStaff || !isCounselor) return;
+    var tm = t.closest("[data-trm]");
+    if(tm){ var ms = trMonths(), mv = +tm.dataset.trm, ix2 = ms.indexOf(mv); if(ix2 > -1) ms.splice(ix2, 1); else ms.push(mv); TM[trKey()] = ms; disSave(); trDraw(); return; }
+    var tw = t.closest("[data-trw]"), tp = t.closest("[data-trp]");
+    if(tw || tp){
+      var tid = (tw || tp).dataset[tw ? "trw" : "trp"], it = trCompute().names.filter(function(x){ return String(x.id) === tid; })[0]; if(!it) return;
+      try{
+        if(tw) await repSave("وسام الانضباط - "+it.n+".docx", await certDocx([it], trLabel(), "term"));
+        else await repSave("وسام الانضباط - "+it.n+".png", await certPng(it, trLabel(), "term"));
+        audit("تنزيل وسام", trLabel()); toast("تم التنزيل");
+      }catch(err){ if(err && err.code === "declined") return; toast("تعذر تجهيز الوسام"); }
+      return;
+    }
     var m = t.closest("[data-mon]");
     if(m){ var id = m.dataset.mon, ix = MONS.indexOf(id); if(ix > -1) MONS.splice(ix, 1); else MONS.push(id); disSave(); monDraw(); return; }
     var ok = t.closest("[data-nmok]"); if(ok){ nmApprove([ok.dataset.nmok]); return; }
     if(t.closest("#nmAll")){ var ids = []; LAGS.forEach(function(d2){ ((d2.dis || {})[disKey()] || []).forEach(function(x){ ids.push(String(x.id)); }); }); nmApprove(ids); }
   });
   function disDraw(){
-    disInit(); if(!$("#disList")) return; monDraw(); nmDraw();
+    disInit(); if(!$("#disList")) return; monDraw(); nmDraw(); trDraw();
     var l = DIS[disKey()] || [];
     $("#disInfo").textContent = l.length ? "منضبطات "+disLabel()+": "+arNum(l.length)+" طالبة" : "لم تُضَف طالبات لـ"+disLabel()+" بعد.";
     $("#disList").innerHTML = l.map(function(x, i){
@@ -2943,7 +2985,8 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     var hit = students.filter(function(x){ return String(x.n).indexOf(q) > -1 && !have[x.id]; }).slice(0, 8);
     box.innerHTML = hit.length ? hit.map(function(x){ return '<button type="button" class="chip" data-disadd="'+x.id+'">'+esc(x.n)+' — '+esc(x.cls || "")+'</button>'; }).join("") : '<span class="hint">لا توجد نتائج</span>';
   }
-  async function certDocx(list, label){
+  async function certDocx(list, label, kind){
+    var TT = kind === "term" ? ["وسام الانضباط","تتشرف وحدة توجيه الطالبات بتكريم الطالبة","لانضباطها في جميع شهور الفصل الدراسي "] : ["شهادة شكر وتقدير","تتقدم وحدة توجيه الطالبات بخالص الشكر والتقدير للطالبة","لانضباطها وحسن سلوكها والتزامها خلال شهر "];
     if(!window.JSZip) throw new Error("jszip");
     function x(t){ return String(t == null ? "" : t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
     function p(t, o){ o = o || {}; return '<w:p><w:pPr><w:bidi/><w:jc w:val="center"/><w:spacing w:before="'+(o.sb || 80)+'" w:after="'+(o.sa || 80)+'"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Traditional Arabic" w:hAnsi="Traditional Arabic" w:cs="Traditional Arabic"/>'+(o.b ? '<w:b/><w:bCs/>' : '')+'<w:color w:val="'+(o.k || "2b2540")+'"/><w:sz w:val="'+(o.z || 36)+'"/><w:szCs w:val="'+(o.z || 36)+'"/><w:rtl/></w:rPr><w:t xml:space="preserve">'+x(t)+'</w:t></w:r></w:p>'; }
@@ -2952,11 +2995,11 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     var body = list.map(function(it, i){
       return (i ? '<w:p><w:r><w:br w:type="page"/></w:r></w:p>' : '') + img +
         p("مدارس الذكر الأهلية – المرحلة الثانوية", {z:30, b:true, k:"5b4a99"}) +
-        p("شهادة شكر وتقدير", {z:88, b:true, k:"5b4a99", sb:200, sa:200}) +
-        p("تتقدم وحدة توجيه الطالبات بخالص الشكر والتقدير للطالبة", {z:36, sb:160}) +
+        p(TT[0], {z:88, b:true, k:"5b4a99", sb:200, sa:200}) +
+        p(TT[1], {z:36, sb:160}) +
         p(it.n, {z:64, b:true, sb:120, sa:120}) +
         p(it.cls ? "الصف: "+it.cls : "", {z:34}) +
-        p("لانضباطها وحسن سلوكها والتزامها خلال شهر "+label, {z:38, sb:160}) +
+        p(TT[2]+label, {z:38, sb:160}) +
         p("نسأل الله لها دوام التوفيق والسداد", {z:36, sb:100, sa:300}) +
         p("موجهة الطالبات: نهى محمد أحمد الأحمدي          مديرة المدرسة: فاتن عبدالله اللبان", {z:30, sb:300});
     }).join('');
@@ -2969,7 +3012,8 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     z.file("word/document.xml", doc);
     return z.generateAsync({type:"uint8array", compression:"DEFLATE"});
   }
-  async function certPng(it, label){
+  async function certPng(it, label, kind){
+    var TT = kind === "term" ? ["وسام الانضباط","تتشرف وحدة توجيه الطالبات بتكريم الطالبة","لانضباطها في جميع شهور الفصل الدراسي "] : ["شهادة شكر وتقدير","تتقدم وحدة توجيه الطالبات بخالص الشكر والتقدير للطالبة","لانضباطها وحسن سلوكها والتزامها خلال شهر "];
     var W = 1754, H = 1240, cv = document.createElement("canvas"); cv.width = W; cv.height = H;
     var c = cv.getContext("2d"), ff = getComputedStyle(document.body).fontFamily || "sans-serif";
     try{ await document.fonts.ready; }catch(e){}
@@ -2982,11 +3026,11 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     }catch(e){}
     function t(txt, y, sz, col, wt){ c.font = (wt || 500)+" "+sz+"px "+ff; c.fillStyle = col || "#2b2540"; c.fillText(txt, W/2, y); }
     t("مدارس الذكر الأهلية – المرحلة الثانوية", 300, 38, "#5b4a99", 700);
-    t("شهادة شكر وتقدير", 420, 96, "#5b4a99", 800);
-    t("تتقدم وحدة توجيه الطالبات بخالص الشكر والتقدير للطالبة", 530, 42);
+    t(TT[0], 420, 96, "#5b4a99", 800);
+    t(TT[1], 530, 42);
     t(it.n, 650, 78, "#2b2540", 800);
     if(it.cls) t("الصف: "+it.cls, 725, 38, "#6b6585");
-    t("لانضباطها وحسن سلوكها والتزامها خلال شهر "+label, 820, 44);
+    t(TT[2]+label, 820, 44);
     t("نسأل الله لها دوام التوفيق والسداد", 900, 40, "#5b4a99");
     c.font = "500 34px "+ff; c.fillStyle = "#2b2540";
     c.fillText("موجهة الطالبات: نهى محمد أحمد الأحمدي", W*0.72, 1060);
@@ -2995,7 +3039,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
     return new Uint8Array(await b.arrayBuffer());
   }
   document.addEventListener("input", function(e){ if(e.target && e.target.id === "disQ") disSearch(); });
-  document.addEventListener("change", function(e){ if(e.target && (e.target.id === "disY" || e.target.id === "disM")){ disDraw(); disSearch(); } });
+  document.addEventListener("change", function(e){ if(e.target && (e.target.id === "disY" || e.target.id === "disM" || e.target.id === "trT")){ disDraw(); disSearch(); } });
   document.addEventListener("click", async function(e){
     if(!isStaff || !isCounselor) return;
     var t = e.target.closest ? e.target : null; if(!t) return;
@@ -3283,7 +3327,7 @@ body.teacher #impForm, body.teacher #addForm, body.teacher #impFile, body.teache
       if(sn.exists && sn.data().items && sn.data().items.length){ HST = sn.data().items.map(function(x){ var ov = x.ov === undefined ? (/لقاءات الأمهات|مجالس/.test(x.l) ? 6 : /استضاف/.test(x.l) ? 3 : 0) : (+x.ov || 0); return {l:x.l, s:x.s || "", m:x.m || 0, n:ov > 0 ? ov : (x.n || 0), ov:ov, auto:x.a || [], ic:x.ic || "star"}; }); if(isStaff){ hstCalc(); } hstDraw(); }
     });
     if(isStaff){
-      onDoc("lists/disc", function(sn){ var d0 = sn.exists ? sn.data() : {}; DIS = d0.m || {}; MONS = d0.mons || []; myMon = !!(myTid() && MONS.indexOf(myTid()) > -1); nomShowTab(); if(myMon) nomLoad(); if($("#d-dis") && !$("#d-dis").hidden) disDraw(); });
+      onDoc("lists/disc", function(sn){ var d0 = sn.exists ? sn.data() : {}; DIS = d0.m || {}; MONS = d0.mons || []; TM = d0.tm || {}; myMon = !!(myTid() && MONS.indexOf(myTid()) > -1); nomShowTab(); if(myMon) nomLoad(); if($("#d-dis") && !$("#d-dis").hidden) disDraw(); else trAnnounce(); });
       if(isCounselor) DB.doc("config/disc").get().then(function(o){ var dd = o && o.exists ? o.data() : null; if(dd && !dd.moved && Object.keys(dd.m || {}).length){ DB.doc("lists/disc").get().then(function(c){ var cur = c && c.exists ? c.data() : {}; return DB.doc("lists/disc").set({m:Object.assign({}, dd.m, cur.m || {}), mons:cur.mons || []}); }).then(function(){ return DB.doc("config/disc").set({m:{}, moved:true}); }).catch(function(){}); } }).catch(function(){});
     }
     onDoc("config/scales", function(sn){
